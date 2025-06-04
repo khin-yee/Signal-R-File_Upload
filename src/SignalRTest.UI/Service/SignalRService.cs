@@ -7,11 +7,13 @@ namespace SignalRTest.UI.Service
     public class SignalRService
     {
         private readonly HubConnection _hubConnection;
+        private readonly IConfiguration _configuration;
 
-        public SignalRService(NavigationManager navigation)
+        public SignalRService(NavigationManager navigation, IConfiguration configuration)
         {
+            _configuration = configuration;
             _hubConnection = new HubConnectionBuilder()
-           .WithUrl(navigation.ToAbsoluteUri("https://localhost:7055" + "/signalR")).Build();
+           .WithUrl(navigation.ToAbsoluteUri($"{_configuration!["ApiURl:baseurl"]}/signalR")).Build();
         }
 
         public async Task StartAsync()

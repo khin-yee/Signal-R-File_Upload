@@ -17,4 +17,5 @@
 	<ItemGroup>
 		<ProjectReference Include="..\SIgnalRTest.Domain\SIgnalRTest.Domain.csproj" />
 	</ItemGroup>
+	
 </Project>

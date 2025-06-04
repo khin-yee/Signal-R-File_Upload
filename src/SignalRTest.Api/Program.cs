@@ -47,6 +47,7 @@ builder.Services.AddHangfireServer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSignalR();
 builder.Services.AddScoped<ISignalRService, SignalRService>();
+builder.Services.AddScoped<SignalRHub>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
