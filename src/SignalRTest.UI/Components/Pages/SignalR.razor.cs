@@ -34,6 +34,7 @@ public partial class SignalR : ComponentBase
     public async Task<ApiResponse> CallApi()
     {
         var response = await _service!.CallApi();
+
         await signalRService.JoinGroupAsync(response.Detail!);
         ListenSignalREvent();
         return response;
