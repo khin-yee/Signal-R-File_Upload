@@ -30,7 +30,7 @@ public class SignalRService:ISignalRService
         await _signalR.SendSignalR(groupId, "Hello");
         await Task.Delay(2000);
         await _signalR.SendSignalR(groupId, "Second");
-        await Task.Delay(3000);
+        await Task.Delay(2000);
         await _signalR.SendSignalR(groupId, "Third");
         await Task.Delay(3000);
     }
