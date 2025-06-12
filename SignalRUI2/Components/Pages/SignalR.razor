@@ -7,15 +7,27 @@
     <MudItem xs="12" sm="6" md="4" class="d-flex align-items-center ">
 
         <MudTextField @bind-Value="message" Variant="Variant.Outlined" Margin="Margin.Dense" Class="p-2" Required />
-        <MudButton Variant="Variant.Filled" OnClick="CallApi" Color="Color.Dark" Class="p-2 ">GetStatus</MudButton>
+        <MudButton Variant="Variant.Filled" OnClick="CallApi" Color="Color.Info" Class="p-2 ">Send</MudButton>
 
     </MudItem>
 </MudGrid>
-<MudGrid Class="mt-1">
-    <MudItem xs="12" sm="6" md="4" class="d-flex align-items-center ">
-        <MudInputLabel class=" m-2">Current Message :</MudInputLabel>
-        <MudInputLabel class="fw-bold m-2">@currentmessage</MudInputLabel>
-    </MudItem>
+        <MudCard Class="w-50 m-2 p-2" Elevation="5">
 
+@if (messages != null)
+{
+    @foreach (var message in messages)
+    {
 
-</MudGrid>
+        <MudGrid>
+                <MudItem xs="12" sm="6" md="2" class="d-flex align-items-center ">
+                    <MudInputLabel class=" m-2">@message.userid</MudInputLabel>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="4" class="d-flex align-items-center ">
+                    <MudInputLabel class="fw-bold m-2">@message.message</MudInputLabel>
+
+                </MudItem>
+        </MudGrid>
+
+    }
+}
+</MudCard>

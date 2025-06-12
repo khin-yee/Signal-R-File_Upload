@@ -15,9 +15,9 @@ public class SignalRHub : Hub
     {
         _singnalRhub = singnalRhub;
     } 
-    public async Task SendSignalR(string groupId, string method,string message)
+    public async Task SendSignalR(string groupId, string method,string message,string userid)
     {
-        await _singnalRhub.Clients.Group(groupId).SendAsync(method, message);
+        await _singnalRhub.Clients.Group(groupId).SendAsync(method, message,userid);
     }
 
     public async Task SendAll(string method, string message)

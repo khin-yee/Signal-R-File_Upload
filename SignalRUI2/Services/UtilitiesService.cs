@@ -12,7 +12,12 @@ public class UtilitiesService
     }
     public async Task<ApiResponse> CallApi(string message)
     {
-        var apiRequest = new ApiRequest(HttpMethod.Post, "/TestSignalR",message);
+        var MessageRequest = new MessageRequest
+        {
+            message =message,
+            userid = "User2",
+        };
+        var apiRequest = new ApiRequest(HttpMethod.Post, "/TestSignalR",MessageRequest);
         return await _apiCallService.APICall(apiRequest);
     }
 }

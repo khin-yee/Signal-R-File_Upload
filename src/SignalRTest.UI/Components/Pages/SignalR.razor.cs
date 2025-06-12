@@ -10,8 +10,13 @@ public partial class SignalR : ComponentBase
 {
     public string? currentmessage { get; set; }
 
-    public string? message { get; set; } 
+    public string? author { get; set; } = "other";
+    public string? message { get; set; }
 
+    public MessageRequest? messageRequest { get; set; } = new MessageRequest();
+
+
+    public List<MessageRequest> messages { get; set; } = new List<MessageRequest>();
     [Inject]
     public UtilitiesService? _service { get; set; }
 
@@ -28,18 +33,27 @@ public partial class SignalR : ComponentBase
 
     private void ListenSignalREvent()
     {
-        signalRService.ReceiveMessageAsync<string>("ReceiveMessage", message =>
+        signalRService.ReceiveTwoMessageAsync<string, string>("ReceiveMessage", (message, userid) =>
         {
-            currentmessage = message;
-            Console.WriteLine($"Received message: {currentmessage}");
+            var messageRequest = new MessageRequest
+            {
+                message = message
+            };
+            if (userid == "User1")
+            {
+                userid = "You";
+            }
+            messageRequest!.userid = userid;
+            messages.Add(messageRequest);
+            Console.WriteLine($"Received message from {userid}: {message}");
             InvokeAsync(StateHasChanged);
         });
     }
     public async Task<ApiResponse> CallApi()
     {
         currentmessage =  "Calling SignalR.....";
+        author = "You";
         var response = await _service!.CallApi(message!);
-        ListenSignalREvent();
         await signalRService.JoinGroupAsync(response.Detail!);
         return response;
     }

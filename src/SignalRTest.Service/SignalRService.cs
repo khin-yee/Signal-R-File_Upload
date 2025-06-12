@@ -24,12 +24,11 @@ public class SignalRService:ISignalRService
         var response = new ApiResponse();
         return response;
     }
-    public async Task SendMessage(string groupId,string message)
+    public async Task SendMessage(string groupId,string message,string userid)
     {
         await _signalR.SendAll("GroupId", groupId);
-        await Task.Delay(2000);
         //await _signalR.SendAll("ReceiveMessage", message);
-        await _signalR.SendSignalR("123", "ReceiveMessage", message);
+        await _signalR.SendSignalR("123", "ReceiveMessage", message, userid);
         //await Task.Delay(2000);
         //await _signalR.SendSignalR(groupId, "ReceiveMessage", message);
         //await Task.Delay(2000);

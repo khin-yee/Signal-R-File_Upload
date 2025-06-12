@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
+using MudBlazor;
+using SIgnalRTest.Domain.Request;
 using SIgnalRTest.Domain.Response;
 using SignalRUI2.Services;
 
@@ -7,9 +9,13 @@ namespace SignalRUI2.Components.Pages;
 public partial class SignalR : ComponentBase
 {
     public string? currentmessage { get; set; }
+
+    public string? author { get; set; } = "others";
     public string? groupId { get; set; }
-    public string?message { get; set; }
-     
+    public string? message { get; set; }
+
+
+    public List<MessageRequest> messages { get; set; } = new List<MessageRequest>();
 
     [Inject]
     public UtilitiesService? _service { get; set; }
@@ -30,26 +36,29 @@ public partial class SignalR : ComponentBase
 
     private void ListenSignalREvent()
     {
-        signalRService.ReceiveMessageAsync<string>("GroupId", groupid =>
+        signalRService.ReceiveTwoMessageAsync<string, string>("ReceiveMessage", (message, userid) =>
         {
-            groupId = groupid;
-            InvokeAsync(StateHasChanged);
-
-        });
-        signalRService.ReceiveMessageAsync<string>("ReceiveMessage", message =>
-        {
-            currentmessage = message;
-            Console.WriteLine($"Received message: {currentmessage}");
+            var messageRequest = new MessageRequest
+            {
+                message = message
+            };
+            if(userid == "User2")
+            {
+                userid = "You";
+            }
+            messageRequest!.userid = userid;
+            messages.Add(messageRequest);
+            Console.WriteLine($"Received message from {userid}: {message}");
             InvokeAsync(StateHasChanged);
         });
     }
+
     public async Task<ApiResponse> CallApi()
     {
         currentmessage =  "Calling SignalR.....";
+        author= "You";
         var response = await _service!.CallApi(message);
-
         await signalRService.JoinGroupAsync(response.Detail!);
-        ListenSignalREvent();
         return response;
     }
 }

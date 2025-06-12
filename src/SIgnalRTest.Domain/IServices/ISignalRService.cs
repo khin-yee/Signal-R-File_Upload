@@ -10,7 +10,7 @@ namespace SIgnalRTest.Domain.IServices
 {
     public interface ISignalRService
     {
-        Task SendMessage(string groupId,string message);
+        Task SendMessage(string groupId,string message,string userid);
         ApiResponse MessageCreate(string groupId);
     }
 }

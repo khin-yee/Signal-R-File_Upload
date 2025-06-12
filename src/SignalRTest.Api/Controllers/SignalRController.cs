@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SIgnalRTest.Domain.IServices;
+using SIgnalRTest.Domain.Request;
 using SIgnalRTest.Domain.Response;
 using System.Security.Cryptography.X509Certificates;
 
@@ -21,10 +22,10 @@ public class SignalRController : ControllerBase
     }
 
     [HttpPost("/TestSignalR")]
-    public IActionResult GetStatus([FromBody] string? message)
+    public IActionResult GetStatus([FromBody] MessageRequest? request)
     {
         var groupId = Guid.NewGuid().ToString();
-        _backgroundJob.Enqueue<ISignalRService>(_service => _service.SendMessage(groupId, message!));
+        _backgroundJob.Enqueue<ISignalRService>(_service => _service.SendMessage(groupId, request.message!, request.userid));
         var apiresponse = new ApiResponse() { Detail = groupId };
         return Ok(apiresponse);
     }
