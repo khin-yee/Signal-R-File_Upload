@@ -1,6 +1,6 @@
 using MudBlazor.Services;
-using SignalRTest.UI.Components;
-using SignalRTest.UI.Service;
+using SignalRUI2.Components;
+using SignalRUI2.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,11 +9,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddHttpClient();
-builder.Services.AddServerSideBlazor()
-    .AddCircuitOptions(options =>
-    {
-        options.DetailedErrors = true;
-    }); 
+builder.Services.AddServerSideBlazor();
 builder.Services.AddMudServices();
 builder.Services.AddScoped<IApiCallService, ApiCallService>();
 builder.Services.AddScoped<UtilitiesService>();

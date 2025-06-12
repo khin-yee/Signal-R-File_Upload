@@ -7,13 +7,14 @@ namespace SignalRTest.UI.Service
     {
         private readonly IApiCallService _apiCallService;
 
+
         public UtilitiesService (IApiCallService apiCallService)
         {
             _apiCallService = apiCallService;
         }
-        public async Task<ApiResponse> CallApi()
+        public async Task<ApiResponse> CallApi(string message)
         {
-            var apiRequest = new ApiRequest(HttpMethod.Post, "/TestSignalR", "", "");
+            var apiRequest = new ApiRequest(HttpMethod.Post, "/TestSignalR", message);
             return await _apiCallService.APICall(apiRequest);
         }
     }

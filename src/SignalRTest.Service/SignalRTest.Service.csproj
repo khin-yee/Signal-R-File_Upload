@@ -9,6 +9,7 @@
 	<ItemGroup>
 		<PackageReference Include="Hangfire" Version="1.8.20" />
 		<PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.2.0" />
+		<PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.0" />
 		<PackageReference Include="Microsoft.AspNetCore.SignalR.Client.Core" Version="8.0.12" />
 		<PackageReference Include="Microsoft.AspNetCore.SignalR.Core" Version="1.2.0" />
 		<PackageReference Include="MudBlazor" Version="8.7.0" />

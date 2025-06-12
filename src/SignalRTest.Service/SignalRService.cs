@@ -19,20 +19,22 @@ public class SignalRService:ISignalRService
     {
         _signalR = signalR;
     } 
-    public async Task<ApiResponse> MessageCreate(string groupId)
+    public ApiResponse MessageCreate(string groupId)
     {
-        await _signalR.SendSignalR(groupId, "First");
         var response = new ApiResponse();
         return response;
     }
-    public async Task SendMessage(string groupId)
+    public async Task SendMessage(string groupId,string message)
     {
-        await _signalR.SendSignalR(groupId, "Hello");
+        await _signalR.SendAll("GroupId", groupId);
         await Task.Delay(2000);
-        await _signalR.SendSignalR(groupId, "Second");
-        await Task.Delay(2000);
-        await _signalR.SendSignalR(groupId, "Third");
-        await Task.Delay(3000);
+        //await _signalR.SendAll("ReceiveMessage", message);
+        await _signalR.SendSignalR("123", "ReceiveMessage", message);
+        //await Task.Delay(2000);
+        //await _signalR.SendSignalR(groupId, "ReceiveMessage", message);
+        //await Task.Delay(2000);
+        //await _signalR.SendSignalR(groupId, "ReceiveMessage", message);
+        //await Task.Delay(3000);
     }
 
     

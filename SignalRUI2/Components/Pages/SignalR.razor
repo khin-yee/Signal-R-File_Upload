@@ -1,0 +1,21 @@
+﻿@page "/signalRTest2"
+@using MudBlazor
+
+<h3>SignalR Testing</h3>
+
+<MudGrid Class="mt-1">
+    <MudItem xs="12" sm="6" md="4" class="d-flex align-items-center ">
+
+        <MudTextField @bind-Value="message" Variant="Variant.Outlined" Margin="Margin.Dense" Class="p-2" Required />
+        <MudButton Variant="Variant.Filled" OnClick="CallApi" Color="Color.Dark" Class="p-2 ">GetStatus</MudButton>
+
+    </MudItem>
+</MudGrid>
+<MudGrid Class="mt-1">
+    <MudItem xs="12" sm="6" md="4" class="d-flex align-items-center ">
+        <MudInputLabel class=" m-2">Current Message :</MudInputLabel>
+        <MudInputLabel class="fw-bold m-2">@currentmessage</MudInputLabel>
+    </MudItem>
+
+
+</MudGrid>

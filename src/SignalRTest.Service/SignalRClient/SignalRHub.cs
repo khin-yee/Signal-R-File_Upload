@@ -14,14 +14,15 @@ public class SignalRHub : Hub
     public SignalRHub (IHubContext<SignalRHub> singnalRhub)
     {
         _singnalRhub = singnalRhub;
-    }
-    public async Task SendAllMessage(string message, object request)
+    } 
+    public async Task SendSignalR(string groupId, string method,string message)
     {
-        await Clients.All.SendAsync(message, request);
+        await _singnalRhub.Clients.Group(groupId).SendAsync(method, message);
     }
-    public async Task SendSignalR(string groupId, string message)
+
+    public async Task SendAll(string method, string message)
     {
-        await _singnalRhub.Clients.Group(groupId).SendAsync("ReceiveMessage", message);
+        await _singnalRhub.Clients.All.SendAsync(method, message);
     }
     public async Task JoinGroup(string groupId)
     {

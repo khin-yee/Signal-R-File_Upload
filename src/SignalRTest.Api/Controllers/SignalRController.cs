@@ -14,17 +14,17 @@ public class SignalRController : ControllerBase
     private readonly IBackgroundJobClient _backgroundJob;
 
 
-    public SignalRController (ISignalRService service, IBackgroundJobClient backgroundJob)
+    public SignalRController(ISignalRService service, IBackgroundJobClient backgroundJob)
     {
         _service = service;
         _backgroundJob = backgroundJob;
     }
 
     [HttpPost("/TestSignalR")]
-    public IActionResult GetStatus()
+    public IActionResult GetStatus([FromBody] string? message)
     {
         var groupId = Guid.NewGuid().ToString();
-         _backgroundJob.Enqueue<ISignalRService>(_service => _service.SendMessage(groupId));
+        _backgroundJob.Enqueue<ISignalRService>(_service => _service.SendMessage(groupId, message!));
         var apiresponse = new ApiResponse() { Detail = groupId };
         return Ok(apiresponse);
     }
