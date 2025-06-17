@@ -6,5 +6,3 @@ using System.Threading.Tasks;
 
 namespace SIgnalRTest.Domain.Request;
 public record ApiRequest(HttpMethod method, string url, object? requestBody = default!, string? token = default!);
-
-

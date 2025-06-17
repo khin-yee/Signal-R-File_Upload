@@ -1,31 +1,95 @@
 ﻿@page "/signalRTest"
 
-<h3>SignalR Testing</h3>
+<MudPaper Class="p-6 py-2   mx-auto my-3 rounded-2xl shadow-lg" Elevation="6" Style="max-width: 850px;">
+    <MudText Typo="Typo.h6" Align="Align.Center" Class="text-secondary font-weight-bold mb-2 pt-3">
+        📡 SignalR Real-Time Chat
+    </MudText>
+    <MudText Typo="Typo.subtitle2" Align="Align.Center" Class="text-secondary mb-4">
+        Send and receive live messages in real time
+    </MudText>
 
-<MudGrid Class="mt-1">
-    <MudItem xs="12" sm="6" md="4" class="d-flex align-items-center ">
 
-        <MudTextField @bind-Value="message" Variant="Variant.Outlined" Margin="Margin.Dense" Class="p-2" Required />
-        <MudButton Variant="Variant.Filled" OnClick="CallApi" Color="Color.Dark" Class="p-2 ">Send</MudButton>
 
-    </MudItem>
-</MudGrid>
-
-@if (messages!= null)
-{
-    @foreach (var message in messages)
+    @if (messages?.Any() == true)
     {
-        <MudGrid Class="mt-1">
 
-            <MudItem xs="12" sm="6" md="4" class="d-flex align-items-center ">
-                <MudInputLabel class=" m-2">@message.userid</MudInputLabel>
-                <MudInputLabel class="fw-bold m-2">@message.message</MudInputLabel>
-            </MudItem>
-        </MudGrid>
+        <MudPaper Class="p-3 m-4  rounded-xl overflow-auto" Elevation="2" Style="max-height: 400px;">
+            <MudText Typo="Typo.subtitle2" Class="mb-3 text-muted">🕒 Chat History</MudText>
+
+            @foreach (var msg in messages)
+            {
+ <MudGrid Class="mb-3">
+                    @if (msg.userid == "You")
+                    {
+                        <MudItem xs="12" Class="d-flex justify-end">
+                            <MudPaper Class="chat-bubble you">
+                                <MudText Typo="Typo.subtitle2" Class="fw-bold text-dark">@msg.userid</MudText>
+                                <MudText Typo="Typo.body2">@msg.message</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">@DateTime.Now.ToShortTimeString()</MudText>
+                            </MudPaper>
+                            <MudAvatar Class="ms-2" Color="Color.Primary">@msg.userid.Substring(0, 1).ToUpper()</MudAvatar>
+                        </MudItem>
+                    }
+                    else
+                    {
+                        <MudItem xs="12" Class="d-flex justify-start">
+                            <MudAvatar Class="me-2" Color="Color.Secondary">@msg.userid.Substring(0, 1).ToUpper()</MudAvatar>
+                            <MudPaper Class="chat-bubble other">
+                                <MudText Typo="Typo.subtitle2" Class="fw-bold text-dark">@msg.userid</MudText>
+                                <MudText Typo="Typo.body2">@msg.message</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">@DateTime.Now.ToShortTimeString()</MudText>
+                            </MudPaper>
+                        </MudItem>
+                    }
+                </MudGrid>            }
+        </MudPaper>
+        <MudDivider />
 
     }
-}
 
+    <MudGrid Class="my-3" Spacing= "2" AlignItems="AlignItems.Center">
+        <MudItem xs="12" sm="10">
+            <MudTextField @bind-Value="message" 
+                          Variant="Variant.Outlined"
+                          FullWidth="true"
+                          Adornment="Adornment.End"
+                          AdornmentIcon="@Icons.Material.Filled.Chat"
+                          Margin="Margin.Dense"
+                          Class="rounded-lg ps-5" />
+        </MudItem>
+        <MudItem xs="12" sm="1" class="align-content-lg-start">
+            <MudButton OnClick="CallApi"
+                       Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Class="btnSize rounded mt-1"
+                      
+                       StartIcon="@Icons.Material.Filled.Send">
+                Send
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+    </MudPaper>
+    <style>
+    .chat-bubble {
+        padding: 12px 20px;
+        border-radius: 20px;
+        max-width: 70%;
+        transition: box-shadow 0.3s;
+    }
 
+        .chat-bubble.you {
+            background-color: #e3f2fd;
+        }
 
+        .chat-bubble.other {
+            background-color: #f1f1f1;
+        }
 
+        .chat-bubble:hover {
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+    .custom-scroll {
+        scroll-behavior: smooth;
+    }
+</style>

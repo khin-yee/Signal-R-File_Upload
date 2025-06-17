@@ -6,6 +6,13 @@ a, .btn-link {
     color: #006bb7;
 }
 
+.btnSize {
+    min-width: 115px !important;
+    padding-top: 7px !important;
+    padding-bottom: 7px !important;
+}
+
+
 .btn-primary {
     color: #fff;
     background-color: #1b6ec2;

@@ -9,20 +9,14 @@ namespace SignalRTest.UI.Components.Pages;
 public partial class SignalR : ComponentBase
 {
     public string? currentmessage { get; set; }
-
     public string? author { get; set; } = "other";
     public string? message { get; set; }
-
     public MessageRequest? messageRequest { get; set; } = new MessageRequest();
-
-
     public List<MessageRequest> messages { get; set; } = new List<MessageRequest>();
     [Inject]
     public UtilitiesService? _service { get; set; }
-
     [Inject]
     public required SignalRService signalRService { get; set; }
-
     protected override async Task OnInitializedAsync()
     {
         await signalRService.StartAsync();
@@ -30,7 +24,6 @@ public partial class SignalR : ComponentBase
         ListenSignalREvent();
         await base.OnInitializedAsync();
     }
-
     private void ListenSignalREvent()
     {
         signalRService.ReceiveTwoMessageAsync<string, string>("ReceiveMessage", (message, userid) =>
