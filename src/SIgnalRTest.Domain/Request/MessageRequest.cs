@@ -8,8 +8,10 @@ namespace SIgnalRTest.Domain.Request
 {
     public  class MessageRequest
     {
-        public string message { get; set; }
+        public string? message { get; set; }
 
         public string userid { get; set; }
+
+        public string? sendtime { get; set; }
     }
 }

@@ -16,6 +16,7 @@ public class UtilitiesService
         {
             message =message,
             userid = "User2",
+            sendtime = "test",          
         };
         var apiRequest = new ApiRequest(HttpMethod.Post, "/TestSignalR",MessageRequest);
         return await _apiCallService.APICall(apiRequest);

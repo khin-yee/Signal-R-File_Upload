@@ -25,7 +25,7 @@
                             <MudPaper Class="chat-bubble you">
                                 <MudText Typo="Typo.subtitle2" Class="fw-bold text-dark">@msg.userid</MudText>
                                 <MudText Typo="Typo.body2">@msg.message</MudText>
-                                <MudText Typo="Typo.caption" Color="Color.Secondary">@DateTime.Now.ToShortTimeString()</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">@msg.sendtime</MudText>
                             </MudPaper>
                             <MudAvatar Class="ms-2" Color="Color.Primary">@msg.userid.Substring(0, 1).ToUpper()</MudAvatar>
                         </MudItem>
@@ -37,7 +37,7 @@
                             <MudPaper Class="chat-bubble other">
                                 <MudText Typo="Typo.subtitle2" Class="fw-bold text-dark">@msg.userid</MudText>
                                 <MudText Typo="Typo.body2">@msg.message</MudText>
-                                <MudText Typo="Typo.caption" Color="Color.Secondary">@DateTime.Now.ToShortTimeString()</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">@msg.sendtime</MudText>
                             </MudPaper>
                         </MudItem>
                     }

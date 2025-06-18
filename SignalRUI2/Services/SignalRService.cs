@@ -34,7 +34,7 @@ public class SignalRService
         _hubConnection.On<T>(methodName, handler);
     }
 
-    public void ReceiveTwoMessageAsync<T1, T2>(string methodName, Action<T1, T2> handler)
+    public void ReceiveTwoMessageAsync<T1, T2,T3>(string methodName, Action<T1, T2,T3> handler)
     {
         _hubConnection.On(methodName, handler);
     }

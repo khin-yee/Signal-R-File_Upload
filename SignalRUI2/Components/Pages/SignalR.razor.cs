@@ -37,11 +37,12 @@ public partial class SignalR : ComponentBase
 
     private void ListenSignalREvent()
     {
-        signalRService.ReceiveTwoMessageAsync<string, string>("ReceiveMessage", (message, userid) =>
+        signalRService.ReceiveTwoMessageAsync<string, string,string>("ReceiveMessage", (message, userid,sendtime) =>
         {
             var messageRequest = new MessageRequest
             {
-                message = message
+                message = message,
+                sendtime = sendtime
             };
             if(userid == "User2")
             {
@@ -64,7 +65,7 @@ public partial class SignalR : ComponentBase
         currentmessage =  "Calling SignalR.....";
         author= "You";
         var response = await _service!.CallApi(message);
-        await signalRService.JoinGroupAsync(response.Detail!);
+        //await signalRService.JoinGroupAsync(response.Detail!);
         return response;
     }
 }

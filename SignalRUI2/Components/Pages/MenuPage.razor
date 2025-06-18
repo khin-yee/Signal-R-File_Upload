@@ -1,0 +1,29 @@
+﻿@page "/chatlist"
+@using System
+<MudPaper Elevation="6" Class="p-6 py-2 mx-auto my-3 rounded-2xl shadow-lg" Style="max-width: auto;">
+    <MudText Typo="Typo.h5" Class="m-2 px-3">Messages</MudText>
+
+  <MudList T="string" Dense= "true " Class="px-3" >
+        @foreach (var chat in ChatList)
+        {
+            <MudDivider />
+            <MudListItem Class="hover:bg-gray-100 rounded-lg cursor-pointer px-2 py-3" @onclick="@(() => OpenChat(chat))">
+                <MudGrid>
+                    <MudItem Class="align-content-end ">
+                        <MudAvatar Color="Color.Secondary" Size="Size.Medium" >U</MudAvatar>
+                    </MudItem>
+                   <MudItem>
+                    <div class="flex-1">
+                        <div class="flex justify-between">
+                            <span class="font-semibold">@chat.Name</span>
+                            <span class="text-xs text-gray-500">@chat.Time.ToShortTimeString()</span>
+                        </div>
+                        <div class="text-sm text-gray-600 truncate">@chat.LastMessage</div>
+                    </div>
+                    </MudItem>
+                </MudGrid>         
+            </MudListItem>
+        }
+  </MudList>
+</MudPaper>
+

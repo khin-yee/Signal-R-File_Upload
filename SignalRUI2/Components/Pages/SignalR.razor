@@ -12,7 +12,6 @@
     {
         <MudPaper Class="p-3 m-4 rounded-xl chat-history custom-scroll" Elevation="2" Style="max-height: 400px; overflow-y: auto;">
             <MudText Typo="Typo.caption" Class="mb-3 text-muted">🕒 Chat History</MudText>
-
             @foreach (var msg in messages)
             {
                 <MudGrid Class="mb-2">
@@ -22,7 +21,7 @@
                             <MudPaper Class="chat-bubble you animate-fade">
                                 <MudText Typo="Typo.subtitle2" Class="fw-bold">@msg.userid</MudText>
                                 <MudText Typo="Typo.body2">@msg.message</MudText>
-                                <MudText Typo="Typo.caption" Class="text-muted">@DateTime.Now.ToShortTimeString()</MudText>
+                                <MudText Typo="Typo.caption" Class="text-muted">@msg.sendtime</MudText>
                             </MudPaper>
                             <MudAvatar Class="ms-2" Color="Color.Info">@msg.userid.Substring(0, 1).ToUpper()</MudAvatar>
                         </MudItem>
@@ -34,7 +33,7 @@
                             <MudPaper Class="chat-bubble other animate-fade">
                                 <MudText Typo="Typo.subtitle2" Class="fw-bold">@msg.userid</MudText>
                                 <MudText Typo="Typo.body2">@msg.message</MudText>
-                                <MudText Typo="Typo.caption" Class="text-muted">@DateTime.Now.ToShortTimeString()</MudText>
+                                <MudText Typo="Typo.caption" Class="text-muted">@msg.sendtime</MudText>
                             </MudPaper>
                         </MudItem>
                     }

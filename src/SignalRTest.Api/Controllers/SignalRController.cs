@@ -22,7 +22,7 @@ public class SignalRController : ControllerBase
     }
 
     [HttpPost("/TestSignalR")]
-    public IActionResult GetStatus([FromBody] MessageRequest? request)
+    public IActionResult GetStatus([FromBody]MessageRequest? request)
     {
         var groupId = Guid.NewGuid().ToString();
         _backgroundJob.Enqueue<ISignalRService>(_service => _service.SendMessage(groupId, request.message!, request.userid));

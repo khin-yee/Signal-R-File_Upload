@@ -17,7 +17,7 @@ public class SignalRHub : Hub
     } 
     public async Task SendSignalR(string groupId, string method,string message,string userid)
     {
-        await _singnalRhub.Clients.Group(groupId).SendAsync(method, message,userid);
+        await _singnalRhub.Clients.Group(groupId).SendAsync(method, message,userid,DateTime.Now.ToShortTimeString());
     }
 
     public async Task SendAll(string method, string message)
