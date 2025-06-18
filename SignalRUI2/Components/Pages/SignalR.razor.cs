@@ -14,7 +14,8 @@ public partial class SignalR : ComponentBase
     public string? groupId { get; set; }
     public string? message { get; set; }
 
-
+    [Inject]
+    public ISnackbar Snackbar { get; set; } = default!;
     public List<MessageRequest> messages { get; set; } = new List<MessageRequest>();
 
     [Inject]
@@ -46,9 +47,14 @@ public partial class SignalR : ComponentBase
             {
                 userid = "You";
             }
+            else
+            {
+                Snackbar.Add($"You got new message from "+ userid, Severity.Success);
+            }
             messageRequest!.userid = userid;
             messages.Add(messageRequest);
             Console.WriteLine($"Received message from {userid}: {message}");
+            
             InvokeAsync(StateHasChanged);
         });
     }

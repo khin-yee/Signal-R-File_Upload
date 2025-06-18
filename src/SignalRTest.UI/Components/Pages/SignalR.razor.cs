@@ -15,6 +15,10 @@ public partial class SignalR : ComponentBase
     public List<MessageRequest> messages { get; set; } = new List<MessageRequest>();
     [Inject]
     public UtilitiesService? _service { get; set; }
+
+    [Inject]
+    public ISnackbar Snackbar { get; set; } = default!;
+
     [Inject]
     public required SignalRService signalRService { get; set; }
     protected override async Task OnInitializedAsync()
@@ -35,6 +39,10 @@ public partial class SignalR : ComponentBase
             if (userid == "User1")
             {
                 userid = "You";
+            }
+            else
+            {
+                Snackbar.Add($"You got new message from "+ userid, Severity.Success);
             }
             messageRequest!.userid = userid;
             messages.Add(messageRequest);

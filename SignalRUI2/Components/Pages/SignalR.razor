@@ -1,43 +1,40 @@
 ﻿@page "/signalRTest2"
 
-<MudPaper Class="p-6 py-2   mx-auto my-3 rounded-2xl shadow-lg" Elevation="6" Style="max-width: 850px;">
-    <MudText Typo="Typo.h6" Align="Align.Center" Class="text-secondary font-weight-bold mb-2 pt-3">
-        📡 SignalR Real-Time Chat
+<MudPaper Class="p-6 py-2 mx-auto my-3 rounded-2xl shadow-lg modern-chat" Elevation="6" Style="max-width: 850px;">
+    <MudText Typo="Typo.h5" Align="Align.Center" Class="text-secondary font-weight-bold mb-1 pt-2">
+        📡 SignalR Chat Room
     </MudText>
     <MudText Typo="Typo.subtitle2" Align="Align.Center" Class="text-secondary mb-4">
-        Send and receive live messages in real time
+        Real-time messaging powered by SignalR
     </MudText>
-
-
 
     @if (messages?.Any() == true)
     {
-
-        <MudPaper Class="p-3 m-4  rounded-xl overflow-auto" Elevation="2" Style="max-height: 400px;">
-            <MudText Typo="Typo.subtitle2" Class="mb-3 text-muted">🕒 Chat History</MudText>
+        <MudPaper Class="p-3 m-4 rounded-xl chat-history custom-scroll" Elevation="2" Style="max-height: 400px; overflow-y: auto;">
+            <MudText Typo="Typo.caption" Class="mb-3 text-muted">🕒 Chat History</MudText>
 
             @foreach (var msg in messages)
             {
-                <MudGrid Class="mb-3">
+                <MudGrid Class="mb-2">
                     @if (msg.userid == "You")
                     {
-                        <MudItem xs="12" Class="d-flex justify-end">
-                            <MudPaper Class="chat-bubble you">
-                                <MudText Typo="Typo.subtitle2" Class="fw-bold text-dark">@msg.userid</MudText>
+                        <MudItem xs="12" Class="d-flex justify-end align-items-start">
+                            <MudPaper Class="chat-bubble you animate-fade">
+                                <MudText Typo="Typo.subtitle2" Class="fw-bold">@msg.userid</MudText>
                                 <MudText Typo="Typo.body2">@msg.message</MudText>
-                                <MudText Typo="Typo.caption" Color="Color.Secondary">@DateTime.Now.ToShortTimeString()</MudText>
+                                <MudText Typo="Typo.caption" Class="text-muted">@DateTime.Now.ToShortTimeString()</MudText>
                             </MudPaper>
-                            <MudAvatar Class="ms-2" Color="Color.Dark">@msg.userid.Substring(0, 1).ToUpper()</MudAvatar>
+                            <MudAvatar Class="ms-2" Color="Color.Info">@msg.userid.Substring(0, 1).ToUpper()</MudAvatar>
                         </MudItem>
                     }
                     else
                     {
-                        <MudItem xs="12" Class="d-flex justify-start">
-                            <MudAvatar Class="me-2" Color="Color.Success">@msg.userid.Substring(0, 1).ToUpper()</MudAvatar>
-                            <MudPaper Class="chat-bubble other">
-                                <MudText Typo="Typo.subtitle2" Class="fw-bold text-dark">@msg.userid</MudText>
+                        <MudItem xs="12" Class="d-flex justify-start align-items-start">
+                            <MudAvatar Class="me-2" Color="Color.Secondary">@msg.userid.Substring(0, 1).ToUpper()</MudAvatar>
+                            <MudPaper Class="chat-bubble other animate-fade">
+                                <MudText Typo="Typo.subtitle2" Class="fw-bold">@msg.userid</MudText>
                                 <MudText Typo="Typo.body2">@msg.message</MudText>
-                                <MudText Typo="Typo.caption" Color="Color.Secondary">@DateTime.Now.ToShortTimeString()</MudText>
+                                <MudText Typo="Typo.caption" Class="text-muted">@DateTime.Now.ToShortTimeString()</MudText>
                             </MudPaper>
                         </MudItem>
                     }
@@ -45,7 +42,6 @@
             }
         </MudPaper>
         <MudDivider />
-
     }
 
     <MudGrid Class="my-3" Spacing="2" AlignItems="AlignItems.Center">
@@ -69,12 +65,13 @@
         </MudItem>
     </MudGrid>
 </MudPaper>
+
 <style>
     .chat-bubble {
-        padding: 12px 20px;
-        border-radius: 20px;
+        padding: 12px 18px;
+        border-radius: 16px;
         max-width: 70%;
-        transition: box-shadow 0.3s;
+        font-size: 0.95rem;
     }
 
         .chat-bubble.you {
@@ -82,14 +79,39 @@
         }
 
         .chat-bubble.other {
-            background-color: #f1f1f1;
+            background-color: #f5f5f5;
         }
 
-        .chat-bubble:hover {
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-        }
-
-    .custom-scroll {
+    .chat-history {
         scroll-behavior: smooth;
+        transition: all 0.3s ease;
+    }
+
+    .modern-chat {
+        backdrop-filter: blur(3px);
+        background-color: rgba(255, 255, 255, 0.95);
+    }
+
+    .animate-fade {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(5px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @@media (max-width: 600px) {
+        .chat-bubble {
+            max-width: 85%;
+        }
     }
 </style>
+
