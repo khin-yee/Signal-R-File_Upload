@@ -28,21 +28,19 @@ public class ApiCallService:IApiCallService
             {
                 httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiRequest.token);
             }
-
             var response = await httpClient.SendAsync(request);
             if (response.IsSuccessStatusCode)
             {
                 using var contentStream =
-                    await response.Content.ReadAsStreamAsync();
-
+                await response.Content.ReadAsStreamAsync();
                 StreamReader reader = new StreamReader(contentStream);
                 responseModel = Newtonsoft.Json.JsonConvert.DeserializeObject<ApiResponse>(await reader.ReadToEndAsync())!;
             }
             else
             {
                 responseModel.ErrorCode = "01";
-                responseModel.ErrorMessage = response.StatusCode.ToString();
                 responseModel.Detail = string.Empty;
+                responseModel.ErrorMessage = response.StatusCode.ToString();
             }
         }
         catch (TaskCanceledException ex) when (ex.InnerException is TimeoutException)

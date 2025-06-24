@@ -3,6 +3,7 @@ using MudBlazor;
 using SIgnalRTest.Domain.Request;
 using SIgnalRTest.Domain.Response;
 using SignalRUI2.Services;
+using System.Threading.Tasks;
 
 namespace SignalRUI2.Components.Pages;
 
@@ -34,7 +35,7 @@ public partial class SignalR : ComponentBase
         ListenSignalREvent();
         await base.OnInitializedAsync();
     }
-
+    
     private void ListenSignalREvent()
     {
         signalRService.ReceiveTwoMessageAsync<string, string,string>("ReceiveMessage", (message, userid,sendtime) =>
@@ -42,21 +43,19 @@ public partial class SignalR : ComponentBase
             var messageRequest = new MessageRequest
             {
                 message = message,
-                sendtime = sendtime
+                sendtime = sendtime,
             };
-            if(userid == "User2")
-            {
-                userid = "You";
-            }
-            else
+            if (userid != "User2")
             {
                 Snackbar.Add($"You got new message from "+ userid, Severity.Success);
+
+                messageRequest!.userid = userid;
+
+                messages.Add(messageRequest);
+                Console.WriteLine($"Received message from {userid}: {message}");
             }
-            messageRequest!.userid = userid;
-            messages.Add(messageRequest);
-            Console.WriteLine($"Received message from {userid}: {message}");
+                InvokeAsync(StateHasChanged);
             
-            InvokeAsync(StateHasChanged);
         });
     }
 
@@ -64,7 +63,16 @@ public partial class SignalR : ComponentBase
     {
         currentmessage =  "Calling SignalR.....";
         author= "You";
+        var messageRequest = new MessageRequest
+        {
+            message  = message,
+            sendtime = DateTime.Now.ToShortTimeString(),
+            userid = "You"
+        };
+        messages.Add(messageRequest);
         var response = await _service!.CallApi(message);
+        StateHasChanged();
+        message = "";
         //await signalRService.JoinGroupAsync(response.Detail!);
         return response;
     }

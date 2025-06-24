@@ -37,17 +37,12 @@ public partial class SignalR : ComponentBase
                 message = message,
                 sendtime = sendtime
             };
-            if (userid == "User1")
-            {
-                userid = "You";
-            }
-            else
+            if (userid != "User1")
             {
                 Snackbar.Add($"You got new message from "+ userid, Severity.Success);
+                messageRequest!.userid = userid;
+                messages.Add(messageRequest);
             }
-            messageRequest!.userid = userid;
-            messages.Add(messageRequest);
-            Console.WriteLine($"Received message from {userid}: {message}");
             InvokeAsync(StateHasChanged);
         });
     }
@@ -56,6 +51,14 @@ public partial class SignalR : ComponentBase
         currentmessage =  "Calling SignalR.....";
         author = "You";
         var response = await _service!.CallApi(message!);
+        var messageRequest = new MessageRequest
+        {
+            message = message,
+            sendtime =  DateTime.Now.ToShortTimeString(),
+            userid = "You"
+        };
+        messages.Add(messageRequest);
+        message = "";
         //await signalRService.JoinGroupAsync(response.Detail!);
         return response;
     }
