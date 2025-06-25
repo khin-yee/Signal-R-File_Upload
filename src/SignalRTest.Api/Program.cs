@@ -15,6 +15,16 @@ IConfiguration config = builder.Configuration;
 // Add services to the container.
 
 builder.Services.AddControllers();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowLocalhost7272", policy =>
+    {
+        policy.WithOrigins("https://localhost:7272")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials(); // Required for SignalR
+    });
+});
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.Configure<HangFireMongoOptions>(config.GetSection("HangfireMongoOptions"));
@@ -62,5 +72,5 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapHub<SignalRHub>("/signalR");
 app.MapControllers();
-
+app.UseCors("AllowLocalhost7272");
 app.Run();

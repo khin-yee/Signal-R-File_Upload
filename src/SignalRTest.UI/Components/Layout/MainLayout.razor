@@ -9,6 +9,15 @@
 
     <main>
         <div class="top-row px-4">
+            <AuthorizeView>
+                <Authorized>
+                    Hello, @context.User.Identity?.Name!
+                    <button @onclick="Logout">Logout</button>
+                </Authorized>
+                <NotAuthorized>
+                    <button @onclick="Login">Login</button>
+                </NotAuthorized>
+            </AuthorizeView>
             <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
         </div>
 
@@ -23,3 +32,11 @@
     <a href="" class="reload">Reload</a>
     <a class="dismiss">🗙</a>
 </div>
+
+@code {
+    [Inject] NavigationManager Navigation { get; set; }
+    [Inject] IHttpContextAccessor HttpContextAccessor { get; set; }
+
+    void Login() => Navigation.NavigateTo("auth/login", true);
+    void Logout() => Navigation.NavigateTo("auth/logout", true);
+}

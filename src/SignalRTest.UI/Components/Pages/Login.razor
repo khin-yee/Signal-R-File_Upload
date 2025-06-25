@@ -1,0 +1,65 @@
+﻿
+@page "/login"
+@inject NavigationManager Navigation
+@inject IHttpClientFactory HttpClientFactory
+
+<h3>Login</h3>
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <p style="color:red">@ErrorMessage</p>
+}
+
+<EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
+    <InputText @bind-Value="loginModel.Username" Placeholder="Username" />
+    <InputText @bind-Value="loginModel.Password" Placeholder="Password" Type="password" />
+    <button type="submit">Login</button>
+</EditForm>
+
+@code {
+    private LoginModel loginModel = new();
+    private string? ErrorMessage;
+    private async Task HandleLogin()
+    {
+        var http = HttpClientFactory.CreateClient();
+        var domain = "https://YOUR_AUTH0_DOMAIN"; // e.g. https://dev-abc123.auth0.com
+
+        var request = new HttpRequestMessage(HttpMethod.Post, $"{domain}/oauth/token");
+        request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            { "grant_type", "password" },
+            { "username", loginModel.Username },
+            { "password", loginModel.Password },
+            { "audience", "YOUR_API_IDENTIFIER" }, // or leave empty if not using API
+            { "scope", "openid profile email" },
+            { "client_id", "YOUR_CLIENT_ID" },
+            { "client_secret", "YOUR_CLIENT_SECRET" }
+        });
+
+        var response = await http.SendAsync(request);
+        if (response.IsSuccessStatusCode)
+        {
+            var payload = await response.Content.ReadFromJsonAsync<AuthResponse>();
+            // Store access_token securely (cookie/session/etc)
+            Navigation.NavigateTo("/");
+        }
+        else
+        {
+            ErrorMessage = "Invalid username or password.";
+        }
+    }
+
+    class LoginModel
+    {
+        public string Username { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+    }
+
+    class AuthResponse
+    {
+        public string access_token { get; set; } = string.Empty;
+        public string id_token { get; set; } = string.Empty;
+        public string token_type { get; set; } = string.Empty;
+        public int expires_in { get; set; }
+    }
+}

@@ -1,0 +1,19 @@
+[
+  {
+    "Name": "New Profile",
+    "Projects": [
+      {
+        "Path": "src\\SignalRTest.Api\\SignalRTest.Api.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "src\\SignalRTest.UI\\SignalRTest.UI.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "src\\SignalRMVC.UI\\SignalRMVC.UI.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

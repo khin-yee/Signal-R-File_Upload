@@ -1,3 +1,8 @@
+using Auth0.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Server;
 using MudBlazor;
 using MudBlazor.Services;
 using SignalRTest.UI.Components;
@@ -28,6 +33,16 @@ builder.Services.AddMudServices(config =>
     config.SnackbarConfiguration.ShowTransitionDuration = 500;
     config.SnackbarConfiguration.SnackbarVariant = Variant.Filled;
 });
+
+builder.Services.AddAuth0WebAppAuthentication(options =>
+{
+    options.Domain = builder.Configuration["Auth0:Domain"];
+    options.ClientId = builder.Configuration["Auth0:ClientId"];
+    options.Scope = "openid profile email";
+    options.CallbackPath = "/signin-auth0";
+});
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<AuthenticationStateProvider, ServerAuthenticationStateProvider>();
 builder.Services.AddScoped<IApiCallService, ApiCallService>();
 builder.Services.AddScoped<UtilitiesService>();
 builder.Services.AddScoped<SignalRService>();
@@ -42,10 +57,27 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseStaticFiles();
 app.UseAntiforgery();
+app.MapGet("/auth/login", async (HttpContext httpContext) =>
+{
+    await httpContext.ChallengeAsync("Auth0", new AuthenticationProperties
+    {
+        RedirectUri = "/"
+    });
+});
 
+app.MapGet("/auth/logout", async (HttpContext httpContext) =>
+{
+    await httpContext.SignOutAsync("Auth0", new AuthenticationProperties
+    {
+        RedirectUri = "/"
+    });
+    await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+});
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
