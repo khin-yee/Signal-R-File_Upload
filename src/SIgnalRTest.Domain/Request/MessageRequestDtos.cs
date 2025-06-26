@@ -8,6 +8,6 @@ namespace SIgnalRTest.Domain.Request
 {
     public  class MessageRequestDtos
     {
-        public List<MessageRequest> Messages { get; set; }
+        public List<MessageRequest> Messages { get; set; } = new List<MessageRequest>();
     }
 }

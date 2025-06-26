@@ -1,4 +1,6 @@
-﻿@{
+﻿@model SIgnalRTest.Domain.Request.MessageRequestDtos
+
+@{
     ViewData["Title"] = "SignalR Real-Time Chat";
 }
 <form asp-action="CallApi" method="get">
@@ -52,7 +54,8 @@
                 userid: userId,
                 time: time
             };
-
+            const query = new URLSearchParams(request).toString();
+            window.location.href = `/SignalRUI/Index?${query}`;
         });       
     </script>
 }

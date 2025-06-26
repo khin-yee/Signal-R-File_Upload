@@ -7,13 +7,20 @@ namespace SignalRMVC.UI.Controllers
     public class SignalRUIController : Controller
     {
         private readonly IApiCallService _apiService;
+
+        private static MessageRequestDtos messages = new MessageRequestDtos();
         public SignalRUIController(IApiCallService apiService)
         {
             _apiService = apiService;
         }
         public IActionResult Index(MessageRequest request)
         {
-            return View();
+            if (!string.IsNullOrEmpty(request.message))
+            {
+                request.sendtime = DateTime.Now.ToString();
+                messages.Messages.Add(request);
+            }
+            return View(messages);
         }
 
         public  async Task<IActionResult> CallApi(string message)
@@ -24,18 +31,9 @@ namespace SignalRMVC.UI.Controllers
                 userid = "UserMVC",
             };
             var apiRequest = new ApiRequest(HttpMethod.Post, "/TestSignalR", MessageRequest);
-             await _apiService.APICall(apiRequest);
-            return RedirectToAction("Index");
+            await _apiService.APICall(apiRequest);
+            return View("Index");
         }
-
-        [HttpPost]
-        public async Task<IActionResult> ReceiveMessage([FromBody] MessageRequest request)
-        {
-            MessageRequestDtos messages = new MessageRequestDtos();
-            messages.Messages.Add(request);
-            return RedirectToAction("Index");
-        }
-
 
     }
 }
