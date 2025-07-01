@@ -18,7 +18,13 @@ namespace SignalRTest.UI.Service
 
         public async Task StartAsync()
         {
-            await _hubConnection.StartAsync();
+            if (_hubConnection == null)
+                return;
+
+            if (_hubConnection.State == HubConnectionState.Disconnected)
+            {
+                await _hubConnection.StartAsync();
+            }
         }
 
         public async Task StopAsync()

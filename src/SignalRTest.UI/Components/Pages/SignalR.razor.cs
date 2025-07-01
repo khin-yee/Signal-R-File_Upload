@@ -8,6 +8,9 @@ using System.Text.RegularExpressions;
 namespace SignalRTest.UI.Components.Pages;
 public partial class SignalR : ComponentBase
 {
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string Email { get; set; }
     public string? currentmessage { get; set; }
     public string? author { get; set; } = "other";
     public string? message { get; set; }

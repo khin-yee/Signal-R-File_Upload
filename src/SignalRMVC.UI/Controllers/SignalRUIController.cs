@@ -15,24 +15,25 @@ namespace SignalRMVC.UI.Controllers
         }
         public IActionResult Index(MessageRequest request)
         {
-            if (!string.IsNullOrEmpty(request.message))
+            if (!string.IsNullOrEmpty(request.message) && request.userid != "UserMVC")
             {
-                request.sendtime = DateTime.Now.ToString();
                 messages.Messages.Add(request);
             }
             return View(messages);
         }
 
         public  async Task<IActionResult> CallApi(string message)
-        {
+        {            
             var MessageRequest = new MessageRequest
             {
                 message =message,
                 userid = "UserMVC",
-            };
+                sendtime = DateTime.Now.ToShortTimeString()
+            };       
             var apiRequest = new ApiRequest(HttpMethod.Post, "/TestSignalR", MessageRequest);
             await _apiService.APICall(apiRequest);
-            return View("Index");
+            messages.Messages.Add(MessageRequest);
+            return RedirectToAction("Index");
         }
 
     }

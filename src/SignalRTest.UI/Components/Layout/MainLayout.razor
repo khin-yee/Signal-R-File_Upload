@@ -1,5 +1,6 @@
 ﻿@inherits LayoutComponentBase
 @using MudBlazor
+@using SignalRTest.UI.Service
 <MudThemeProvider  />
 <MudPopoverProvider />
 <MudDialogProvider />
@@ -8,18 +9,21 @@
   
 
     <main>
-        <div class="top-row px-4">
-            <AuthorizeView>
-                <Authorized>
-                    Hello, @context.User.Identity?.Name!
-                    <button @onclick="Logout">Logout</button>
-                </Authorized>
-                <NotAuthorized>
-                    <button @onclick="Login">Login</button>
-                </NotAuthorized>
-            </AuthorizeView>
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+        @if (!IsLoginPage)
+        {
+            <div class="top-row px-4">
+                <AuthorizeView>
+                    <Authorized>
+                        Hello, @context.User.FindFirst(c => c.Type == "email")?.Value!
+                        <button @onclick="Logout">Logout</button>
+                    </Authorized>
+                    <NotAuthorized>
+                        <button @onclick="Login">Login</button>
+                    </NotAuthorized>
+                </AuthorizeView>
+                <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            </div>
+        }
 
         <article class="content px-4">
             @Body
@@ -36,7 +40,18 @@
 @code {
     [Inject] NavigationManager Navigation { get; set; }
     [Inject] IHttpContextAccessor HttpContextAccessor { get; set; }
+    [Inject] public AuthenticationStateProvider AuthenticationStateProvider { get; set; }
 
-    void Login() => Navigation.NavigateTo("auth/login", true);
-    void Logout() => Navigation.NavigateTo("auth/logout", true);
+    private bool IsLoginPage => Navigation.Uri.Contains("/login", StringComparison.OrdinalIgnoreCase);
+
+    void Login() => Navigation.NavigateTo("login", true);
+    void Logout()
+    {
+        if (AuthenticationStateProvider is CustomAuthStateProvider customAuthStateProvider)
+        {
+            customAuthStateProvider.MarkUserAsLoggedOut();
+        }
+
+        Navigation.NavigateTo("/login");
+    }
 }

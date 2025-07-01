@@ -46,6 +46,9 @@ builder.Services.AddScoped<AuthenticationStateProvider, ServerAuthenticationStat
 builder.Services.AddScoped<IApiCallService, ApiCallService>();
 builder.Services.AddScoped<UtilitiesService>();
 builder.Services.AddScoped<SignalRService>();
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
+builder.Services.AddAuthorizationCore();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

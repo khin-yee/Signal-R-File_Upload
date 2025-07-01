@@ -1,65 +1,47 @@
-﻿
-@page "/login"
+﻿@page "/login"
+@inject HttpClient Http
 @inject NavigationManager Navigation
-@inject IHttpClientFactory HttpClientFactory
 
-<h3>Login</h3>
 
-@if (!string.IsNullOrEmpty(ErrorMessage))
-{
-    <p style="color:red">@ErrorMessage</p>
-}
 
-<EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
-    <InputText @bind-Value="loginModel.Username" Placeholder="Username" />
-    <InputText @bind-Value="loginModel.Password" Placeholder="Password" Type="password" />
-    <button type="submit">Login</button>
-</EditForm>
+<MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="d-flex justify-center align-center" Style="height: 100vh">
+    <MudPaper Elevation="12" Class="pa-5" Style="width: 400px; border-radius: 16px; background-color: white;">
+        <MudCardContent>
+            <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-5" Color="Color.Dark">Chat App</MudText>
 
-@code {
-    private LoginModel loginModel = new();
-    private string? ErrorMessage;
-    private async Task HandleLogin()
-    {
-        var http = HttpClientFactory.CreateClient();
-        var domain = "https://YOUR_AUTH0_DOMAIN"; // e.g. https://dev-abc123.auth0.com
+            @if (!string.IsNullOrEmpty(Error))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true" Elevation="0" Class="mb-3">@Error</MudAlert>
+            }
 
-        var request = new HttpRequestMessage(HttpMethod.Post, $"{domain}/oauth/token");
-        request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
-        {
-            { "grant_type", "password" },
-            { "username", loginModel.Username },
-            { "password", loginModel.Password },
-            { "audience", "YOUR_API_IDENTIFIER" }, // or leave empty if not using API
-            { "scope", "openid profile email" },
-            { "client_id", "YOUR_CLIENT_ID" },
-            { "client_secret", "YOUR_CLIENT_SECRET" }
-        });
+            <MudTextField @bind-Value="Username"
+                          Label="Email"
+                          Variant="Variant.Outlined"
+                          Adornment="Adornment.Start" Placeholder="Email"
+                          AdornmentIcon="@Icons.Material.Filled.Email"
+                          Class="mb-3" />
 
-        var response = await http.SendAsync(request);
-        if (response.IsSuccessStatusCode)
-        {
-            var payload = await response.Content.ReadFromJsonAsync<AuthResponse>();
-            // Store access_token securely (cookie/session/etc)
-            Navigation.NavigateTo("/");
-        }
-        else
-        {
-            ErrorMessage = "Invalid username or password.";
-        }
-    }
+            <MudTextField @bind-Value="Password"
+                          Label="Password"
+                          Variant="Variant.Outlined"
+                          InputType="InputType.Password"
+                          Adornment="Adornment.Start" Placeholder="Password"
 
-    class LoginModel
-    {
-        public string Username { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
-    }
+                          AdornmentIcon="@Icons.Material.Filled.Lock"
+                          Class="mb-4" />
 
-    class AuthResponse
-    {
-        public string access_token { get; set; } = string.Empty;
-        public string id_token { get; set; } = string.Empty;
-        public string token_type { get; set; } = string.Empty;
-        public int expires_in { get; set; }
-    }
-}
+            <MudButton OnClick="HandleLogin"
+                       Variant="Variant.Filled"
+                       Color="Color.Dark"
+                       FullWidth="true"
+                       Style="height: 45px;">Login</MudButton>
+        </MudCardContent>
+
+        <MudCardActions Class="justify-center mt-3">
+            <MudText Typo="Typo.body2">
+                Don't have an account?
+                <MudLink Href="#" Color="Color.Primary" Class="ml-1">Sign up</MudLink>
+            </MudText>
+        </MudCardActions>
+    </MudPaper>
+</MudContainer>

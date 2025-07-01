@@ -26,7 +26,7 @@ public class SignalRService:ISignalRService
     }
     public async Task SendMessage(string groupId,string message,string userid)
     {
-       // await _signalR.SendAll("GroupId", groupId);
+        // await _signalR.SendAll("GroupId", groupId);
         //await _signalR.SendAll("ReceiveMessage", message);
         await _signalR.SendSignalR("123", "ReceiveMessage", message, userid);
         //await Task.Delay(2000);
