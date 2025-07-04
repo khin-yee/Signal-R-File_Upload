@@ -1,4 +1,4 @@
-﻿@page "/login"
+﻿@page "/SignIn"
 @inject HttpClient Http
 @inject NavigationManager Navigation
 
@@ -13,8 +13,13 @@
             {
                 <MudAlert Severity="Severity.Error" Dense="true" Elevation="0" Class="mb-3">@Error</MudAlert>
             }
-
             <MudTextField @bind-Value="Username"
+                          Label="Email"
+                          Variant="Variant.Outlined"
+                          Adornment="Adornment.Start" Placeholder="User Name"
+                          AdornmentIcon="@Icons.Material.Filled.AccountCircle"
+                          Class="mb-3" />
+            <MudTextField @bind-Value="Email"
                           Label="Email"
                           Variant="Variant.Outlined"
                           Adornment="Adornment.Start" Placeholder="Email"
@@ -26,7 +31,6 @@
                           Variant="Variant.Outlined"
                           InputType="InputType.Password"
                           Adornment="Adornment.Start" Placeholder="Password"
-
                           AdornmentIcon="@Icons.Material.Filled.Lock"
                           Class="mb-4" />
 
@@ -34,13 +38,13 @@
                        Variant="Variant.Filled"
                        Color="Color.Dark"
                        FullWidth="true"
-                       Style="height: 45px;">Login</MudButton>
+                       Style="height: 45px;">SignUp</MudButton>
         </MudCardContent>
 
         <MudCardActions Class="justify-center mt-3">
             <MudText Typo="Typo.body2">
-                Don't have an account?
-                <MudLink Href="/SignIn" Color="Color.Primary" Class="ml-1">Sign up</MudLink>
+                Do you have an account?
+                <MudLink Href="/login" Color="Color.Primary" Class="ml-1">LogIn</MudLink>
             </MudText>
         </MudCardActions>
     </MudPaper>

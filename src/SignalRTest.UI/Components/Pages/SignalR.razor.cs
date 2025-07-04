@@ -10,7 +10,7 @@ public partial class SignalR : ComponentBase
 {
     [Parameter]
     [SupplyParameterFromQuery]
-    public string Email { get; set; }
+    public string Name { get; set; }
     public string? currentmessage { get; set; }
     public string? author { get; set; } = "other";
     public string? message { get; set; }
@@ -40,7 +40,7 @@ public partial class SignalR : ComponentBase
                 message = message,
                 sendtime = sendtime
             };
-            if (userid != "User1")
+            if (userid != Name)
             {
                 Snackbar.Add($"You got new message from "+ userid, Severity.Success);
                 messageRequest!.userid = userid;
@@ -53,7 +53,7 @@ public partial class SignalR : ComponentBase
     {
         currentmessage =  "Calling SignalR.....";
         author = "You";
-        var response = await _service!.CallApi(message!);
+        var response = await _service!.CallApi(message!, Name);
         var messageRequest = new MessageRequest
         {
             message = message,

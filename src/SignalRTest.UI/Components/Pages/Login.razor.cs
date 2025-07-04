@@ -42,11 +42,11 @@ public partial class Login : ComponentBase
             if (AuthenticationStateProvider is CustomAuthStateProvider customAuthStateProvider)
             {
                 customAuthStateProvider.MarkUserAsAuthenticated(
-                    claims.FirstOrDefault(c => c.Type == "email")?.Value ?? Username,
-                    claims);
+     claims.FirstOrDefault(c => c.Type == "name")?.Value ?? Username,
+     claims);
             }
-            var email = claims.FirstOrDefault(c => c.Type == "email")?.Value ?? Username;
-            Navigation.NavigateTo($"/signalRTest?email={Uri.EscapeDataString(email)}");
+            var name = claims.FirstOrDefault(c => c.Type == "name")?.Value ?? Username;
+            Navigation.NavigateTo($"/signalRTest?name={Uri.EscapeDataString(name)}");
         }
         else
         {

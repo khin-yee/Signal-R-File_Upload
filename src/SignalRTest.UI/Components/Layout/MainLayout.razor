@@ -14,14 +14,13 @@
             <div class="top-row px-4">
                 <AuthorizeView>
                     <Authorized>
-                        Hello, @context.User.FindFirst(c => c.Type == "email")?.Value!
+                        <MudText Class="fw-bold px-2"> @context.User.FindFirst(c => c.Type == "name")?.Value</MudText>
                         <button @onclick="Logout">Logout</button>
                     </Authorized>
                     <NotAuthorized>
                         <button @onclick="Login">Login</button>
                     </NotAuthorized>
                 </AuthorizeView>
-                <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
             </div>
         }
 
