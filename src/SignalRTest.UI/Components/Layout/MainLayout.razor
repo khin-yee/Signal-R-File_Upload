@@ -6,7 +6,7 @@
 <MudDialogProvider />
 <MudSnackbarProvider />
 <div class="page">
-  
+
 
     <main>
         @if (!IsLoginPage)
@@ -41,9 +41,9 @@
     [Inject] IHttpContextAccessor HttpContextAccessor { get; set; }
     [Inject] public AuthenticationStateProvider AuthenticationStateProvider { get; set; }
 
-    private bool IsLoginPage => Navigation.Uri.Contains("/login", StringComparison.OrdinalIgnoreCase);
-
-    void Login() => Navigation.NavigateTo("login", true);
+    private bool IsLoginPage => Navigation.ToBaseRelativePath(Navigation.Uri) == "" || Navigation.ToBaseRelativePath(Navigation.Uri) == "SignIn";
+    
+    void Login() => Navigation.NavigateTo("/", true);
     void Logout()
     {
         if (AuthenticationStateProvider is CustomAuthStateProvider customAuthStateProvider)
@@ -51,6 +51,6 @@
             customAuthStateProvider.MarkUserAsLoggedOut();
         }
 
-        Navigation.NavigateTo("/login");
+        Navigation.NavigateTo("/");
     }
 }

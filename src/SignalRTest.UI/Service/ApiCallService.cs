@@ -3,6 +3,7 @@ using SIgnalRTest.Domain.Request;
 using SIgnalRTest.Domain.Response;
 using System.Net.Http.Headers;
 using System.Net.Mime;
+using System.Reflection.PortableExecutable;
 using System.Text;
 
 namespace SignalRTest.UI.Service;
@@ -38,8 +39,18 @@ public class ApiCallService:IApiCallService
             }
             else
             {
+                var responsetext = await response.Content.ReadAsStreamAsync();
+                StreamReader reader = new StreamReader(responsetext);
+                if (apiRequest.token  != null)
+                {
+                    var errorresponse = Newtonsoft.Json.JsonConvert.DeserializeObject<AuthOSignInErrorResponse>(await reader.ReadToEndAsync())!;
+                    responseModel.Detail = errorresponse.Message;
+                }
+                else
+                {
+                    responseModel = Newtonsoft.Json.JsonConvert.DeserializeObject<ApiResponse>(await reader.ReadToEndAsync())!;
+                }
                 responseModel.ErrorCode = "01";
-                responseModel.Detail = string.Empty;
                 responseModel.ErrorMessage = response.StatusCode.ToString();
             }
         }
@@ -61,7 +72,15 @@ public class ApiCallService:IApiCallService
      private HttpRequestMessage PopulateHttpRequestMessage(ApiRequest apiRequest)
     {
         bool isFormContent = (apiRequest.requestBody?.GetType()== typeof(MultipartFormDataContent));
-        var baseUrl = $"{_configuration["ApiURl:baseurl"]}{apiRequest.url}";
+        string baseUrl;
+        if(string.IsNullOrEmpty(apiRequest.token))
+        {
+             baseUrl = $"{_configuration["ApiURl:baseurl"]}{apiRequest.url}";
+        }
+        else
+        {
+            baseUrl = apiRequest.url;
+        }
         var httpRequestMsg = new HttpRequestMessage(apiRequest.method, baseUrl)
         {
             Content = (isFormContent) ?

@@ -7,14 +7,14 @@
 <MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="d-flex justify-center align-center" Style="height: 100vh">
     <MudPaper Elevation="12" Class="pa-5" Style="width: 400px; border-radius: 16px; background-color: white;">
         <MudCardContent>
-            <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-5" Color="Color.Dark">Chat App</MudText>
+            <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-5" Color="Color.Dark">Chanoholic</MudText>
 
             @if (!string.IsNullOrEmpty(Error))
             {
                 <MudAlert Severity="Severity.Error" Dense="true" Elevation="0" Class="mb-3">@Error</MudAlert>
             }
             <MudTextField @bind-Value="Username"
-                          Label="Email"
+                          Label="User Name"
                           Variant="Variant.Outlined"
                           Adornment="Adornment.Start" Placeholder="User Name"
                           AdornmentIcon="@Icons.Material.Filled.AccountCircle"
@@ -34,7 +34,7 @@
                           AdornmentIcon="@Icons.Material.Filled.Lock"
                           Class="mb-4" />
 
-            <MudButton OnClick="HandleLogin"
+            <MudButton OnClick="CreateAccount"
                        Variant="Variant.Filled"
                        Color="Color.Dark"
                        FullWidth="true"
@@ -44,7 +44,7 @@
         <MudCardActions Class="justify-center mt-3">
             <MudText Typo="Typo.body2">
                 Do you have an account?
-                <MudLink Href="/login" Color="Color.Primary" Class="ml-1">LogIn</MudLink>
+                <MudLink Href="/" Color="Color.Primary" Class="ml-1">LogIn</MudLink>
             </MudText>
         </MudCardActions>
     </MudPaper>
