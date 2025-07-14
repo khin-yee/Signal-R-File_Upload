@@ -31,7 +31,6 @@ public partial class SignIn : ComponentBase
 
     private async Task CreateAccount()
     {
-        //HttpMethod method, string url, object? requestBody = default!, string? token = default!
         string token =await  GetManagementTokenAsync();
         string url = "https://dev-885urtcfxbrkfg3b.us.auth0.com/api/v2/users";
         var newUser = new
@@ -47,10 +46,11 @@ public partial class SignIn : ComponentBase
 
         var response = await _apiservice!.APICall(apiRequest);
 
-
-        if (!string.IsNullOrEmpty(response.Detail))
+        if (response.ErrorCode!= "00")
         {
-            Snackbar.Add(response!.Detail, Severity.Error);
+            var errorResponse = JsonConvert.DeserializeObject<AuthOSignInErrorResponse>(response.Detail!);
+
+            Snackbar.Add(errorResponse.Message, Severity.Error);
 
             Navigation.NavigateTo("/SignIn");
             
@@ -74,12 +74,14 @@ public partial class SignIn : ComponentBase
         };
 
         var response = await client.SendAsync(request);
+
         var json = await response.Content.ReadAsStringAsync();
 
         if (!response.IsSuccessStatusCode)
             throw new Exception($"Failed to get token: {json}");
 
         var obj = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(json);
+
         return obj.GetProperty("access_token").GetString();
     }
 
@@ -91,7 +93,6 @@ public partial class SignIn : ComponentBase
             { "client_id", "kcOHYxPyPY5Q1ZAV1J9IdNQ8acymQLOz" },
             { "client_secret", "Uw6Xb8mCd61mmyazpKID6os0YzG3PW8gt3y_Q9JOqrzozebRJ6QnDe2D-v6hGKxk" },
             { "audience", "https://dev-885urtcfxbrkfg3b.us.auth0.com/api/v2/" }
-
         };
     }
 }

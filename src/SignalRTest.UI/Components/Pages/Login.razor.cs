@@ -1,11 +1,15 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using Newtonsoft.Json;
 using SignalRTest.UI.Service;
+using SIgnalRTest.Domain.Request;
 using SIgnalRTest.Domain.Response;
 namespace SignalRTest.UI.Components.Pages;
 public partial class Login : ComponentBase
 {
     [Inject] public AuthenticationStateProvider AuthenticationStateProvider { get; set; }
+
+    [Inject] public IApiCallService _apiService { get; set; }
 
     private string Username;
 
@@ -24,18 +28,18 @@ public partial class Login : ComponentBase
             { "client_secret", "Uw6Xb8mCd61mmyazpKID6os0YzG3PW8gt3y_Q9JOqrzozebRJ6QnDe2D-v6hGKxk" }
         };
 
-        var request = new HttpRequestMessage(HttpMethod.Post, "https://dev-885urtcfxbrkfg3b.us.auth0.com/oauth/token")
-        {
-            Content = new FormUrlEncodedContent(payload)
-        };
+        var url = "https://dev-885urtcfxbrkfg3b.us.auth0.com/oauth/token";
 
-        var response = await Http.SendAsync(request);
+        var apirequest = new ApiRequest(HttpMethod.Post, url, payload, "aa");
 
-        if (response.IsSuccessStatusCode)
+        var response = await _apiService.APICall(apirequest);
+
+        if (response.ErrorCode == "00")
         {
-            var result = await response.Content.ReadFromJsonAsync<Auth0TokenResponse>();
+            var result = JsonConvert.DeserializeObject<Auth0TokenResponse>(response.Detail!);
 
             var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+ 
             var jwt = handler.ReadJwtToken(result.id_token);
 
             var claims = jwt.Claims;

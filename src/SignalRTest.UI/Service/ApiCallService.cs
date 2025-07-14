@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Newtonsoft.Json;
 using SIgnalRTest.Domain.Request;
 using SIgnalRTest.Domain.Response;
 using System.Net.Http.Headers;
@@ -32,26 +33,15 @@ public class ApiCallService:IApiCallService
             var response = await httpClient.SendAsync(request);
             if (response.IsSuccessStatusCode)
             {
-                using var contentStream =
-                await response.Content.ReadAsStreamAsync();
-                StreamReader reader = new StreamReader(contentStream);
-                responseModel = Newtonsoft.Json.JsonConvert.DeserializeObject<ApiResponse>(await reader.ReadToEndAsync())!;
+                responseModel.ErrorCode = "00";
+                responseModel.ErrorMessage = "No Error";
+                responseModel.Detail = await response.Content.ReadAsStringAsync();
             }
             else
             {
-                var responsetext = await response.Content.ReadAsStreamAsync();
-                StreamReader reader = new StreamReader(responsetext);
-                if (apiRequest.token  != null)
-                {
-                    var errorresponse = Newtonsoft.Json.JsonConvert.DeserializeObject<AuthOSignInErrorResponse>(await reader.ReadToEndAsync())!;
-                    responseModel.Detail = errorresponse.Message;
-                }
-                else
-                {
-                    responseModel = Newtonsoft.Json.JsonConvert.DeserializeObject<ApiResponse>(await reader.ReadToEndAsync())!;
-                }
                 responseModel.ErrorCode = "01";
-                responseModel.ErrorMessage = response.StatusCode.ToString();
+                responseModel.ErrorMessage = "System Error";
+                responseModel.Detail = await response.Content.ReadAsStringAsync();
             }
         }
         catch (TaskCanceledException ex) when (ex.InnerException is TimeoutException)
