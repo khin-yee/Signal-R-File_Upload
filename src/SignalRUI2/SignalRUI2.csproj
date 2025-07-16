@@ -14,8 +14,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\src\SIgnalRTest.Domain\SIgnalRTest.Domain.csproj" />
-    <ProjectReference Include="..\src\SignalRTest.UI\SignalRTest.UI.csproj" />
+    <ProjectReference Include="..\SIgnalRTest.Domain\SIgnalRTest.Domain.csproj" />
+    <ProjectReference Include="..\SignalRTest.UI\SignalRTest.UI.csproj" />
   </ItemGroup>
 
 </Project>

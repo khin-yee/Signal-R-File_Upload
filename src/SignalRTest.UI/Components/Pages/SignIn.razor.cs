@@ -50,7 +50,7 @@ public partial class SignIn : ComponentBase
         {
             var errorResponse = JsonConvert.DeserializeObject<AuthOSignInErrorResponse>(response.Detail!);
 
-            Snackbar.Add(errorResponse.Message, Severity.Error);
+            Snackbar.Add(errorResponse!.Message, Severity.Error);
 
             Navigation.NavigateTo("/SignIn");
             
@@ -65,22 +65,18 @@ public partial class SignIn : ComponentBase
 
     public async Task<string> GetManagementTokenAsync()
     {
-        var client = new HttpClient();
         var requestBody = GetRequestBody();
 
-        var request = new HttpRequestMessage(HttpMethod.Post, "https://dev-885urtcfxbrkfg3b.us.auth0.com/oauth/token")
-        {
-            Content = new FormUrlEncodedContent(requestBody)
-        };
+        var url = "https://dev-885urtcfxbrkfg3b.us.auth0.com/oauth/token";
 
-        var response = await client.SendAsync(request);
+        var apiRequest = new ApiRequest(HttpMethod.Post, url, requestBody, "test");
 
-        var json = await response.Content.ReadAsStringAsync();
+        var response = await _apiservice.APICall(apiRequest);
 
-        if (!response.IsSuccessStatusCode)
-            throw new Exception($"Failed to get token: {json}");
+        if (response.ErrorCode != "00")
+            throw new Exception($"Failed to get token: {response.Detail}");
 
-        var obj = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(json);
+        var obj = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(response.Detail);
 
         return obj.GetProperty("access_token").GetString();
     }
