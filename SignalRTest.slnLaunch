@@ -11,7 +11,7 @@
         "Action": "Start"
       },
       {
-        "Path": "src\\SignalRMVC.UI\\SignalRMVC.UI.csproj",
+        "Path": "src\\SignalRUI2\\SignalRUI2.csproj",
         "Action": "Start"
       }
     ]

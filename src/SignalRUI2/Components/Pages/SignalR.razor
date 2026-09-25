@@ -1,116 +1,304 @@
-﻿@page "/signalRTest2"
+@page "/signalRTest2"
 
-<MudPaper Class="p-6 py-2 mx-auto my-3 rounded-2xl shadow-lg modern-chat" Elevation="6" Style="max-width: 850px;">
-    <MudText Typo="Typo.h5" Align="Align.Center" Class="text-secondary font-weight-bold mb-1 pt-2">
-        📡 SignalR Chat Room
-    </MudText>
-    <MudText Typo="Typo.subtitle2" Align="Align.Center" Class="text-secondary mb-4">
-        Real-time messaging powered by SignalR
-    </MudText>
+<div class="chat2-page">
 
-    @if (messages?.Any() == true)
-    {
-        <MudPaper Class="p-3 m-4 rounded-xl chat-history custom-scroll" Elevation="2" Style="max-height: 400px; overflow-y: auto;">
-            <MudText Typo="Typo.caption" Class="mb-3 text-muted">🕒 Chat History</MudText>
-            @foreach (var msg in messages)
+    <div class="chat2-container">
+
+        <!-- Header -->
+        <div class="chat2-header">
+            <div class="chat2-header-left">
+                <div class="chat2-logo-wrap">
+                    <MudIcon Icon="@Icons.Material.Filled.Podcasts" Style="color:#0891b2;font-size:1.2rem;" />
+                </div>
+                <div class="ms-2">
+                    <div class="chat2-title">SignalR Chat Room</div>
+                    <div class="chat2-online"><span class="online2-dot"></span>Live · Real-time</div>
+                </div>
+            </div>
+            <div class="chat2-group-badge">
+                <MudIcon Icon="@Icons.Material.Filled.Group" Style="font-size:1rem;color:#0891b2;" />
+                <span class="ms-1">Group · 123</span>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        <div class="chat2-messages">
+            @if (messages?.Any() == true)
             {
-                <MudGrid Class="mb-2">
+                @foreach (var msg in messages)
+                {
                     @if (msg.userid == "You")
                     {
-                        <MudItem xs="12" Class="d-flex justify-end align-items-start">
-                            <MudPaper Class="chat-bubble you animate-fade">
-                                <MudText Typo="Typo.subtitle2" Class="fw-bold">@msg.userid</MudText>
-                                <MudText Typo="Typo.body2">@msg.message</MudText>
-                                <MudText Typo="Typo.caption" Class="text-muted">@msg.sendtime</MudText>
-                            </MudPaper>
-                            <MudAvatar Class="ms-2" Color="Color.Info">@msg.userid.Substring(0, 1).ToUpper()</MudAvatar>
-                        </MudItem>
+                        <div class="msg2-row msg2-you animate2-msg">
+                            <div class="bubble2 bubble2-you">
+                                <div class="bubble2-text">@msg.message</div>
+                                <div class="bubble2-meta">
+                                    <span class="bubble2-author">@msg.userid</span>
+                                    <span class="bubble2-time">@msg.sendtime</span>
+                                </div>
+                            </div>
+                            <MudAvatar Class="msg2-ava" Style="background:#cffafe;color:#0891b2;font-weight:700;font-size:0.8rem;width:34px;height:34px;flex-shrink:0;">
+                                @msg.userid.Substring(0, 1).ToUpper()
+                            </MudAvatar>
+                        </div>
                     }
                     else
                     {
-                        <MudItem xs="12" Class="d-flex justify-start align-items-start">
-                            <MudAvatar Class="me-2" Color="Color.Secondary">@msg.userid.Substring(0, 1).ToUpper()</MudAvatar>
-                            <MudPaper Class="chat-bubble other animate-fade">
-                                <MudText Typo="Typo.subtitle2" Class="fw-bold">@msg.userid</MudText>
-                                <MudText Typo="Typo.body2">@msg.message</MudText>
-                                <MudText Typo="Typo.caption" Class="text-muted">@msg.sendtime</MudText>
-                            </MudPaper>
-                        </MudItem>
+                        <div class="msg2-row msg2-other animate2-msg">
+                            <MudAvatar Class="msg2-ava" Style="background:#f3f4f6;color:#374151;font-weight:700;font-size:0.8rem;width:34px;height:34px;flex-shrink:0;">
+                                @msg.userid.Substring(0, 1).ToUpper()
+                            </MudAvatar>
+                            <div class="bubble2 bubble2-other">
+                                <div class="bubble2-text">@msg.message</div>
+                                <div class="bubble2-meta">
+                                    <span class="bubble2-author other2-author">@msg.userid</span>
+                                    <span class="bubble2-time other2-time">@msg.sendtime</span>
+                                </div>
+                            </div>
+                        </div>
                     }
-                </MudGrid>
+                }
             }
-        </MudPaper>
-        <MudDivider />
-    }
+            else
+            {
+                <div class="chat2-empty">
+                    <MudIcon Icon="@Icons.Material.Outlined.MapsUgc" Style="font-size:2.8rem;color:#d1d5db;" />
+                    <p class="mt-2 mb-0" style="color:#9ca3af;font-size:0.88rem;">No messages yet. Start the conversation!</p>
+                </div>
+            }
+        </div>
 
-    <MudGrid Class="my-3" Spacing="2" AlignItems="AlignItems.Center">
-        <MudItem xs="12" sm="10">
+        <!-- Input -->
+        <div class="chat2-input-bar">
             <MudTextField @bind-Value="message"
                           Variant="Variant.Outlined"
                           FullWidth="true"
-                          Adornment="Adornment.End"
-                          AdornmentIcon="@Icons.Material.Filled.Chat"
+                          Placeholder="Write a message..."
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Outlined.Edit"
                           Margin="Margin.Dense"
-                          Class="rounded-lg ps-5" />
-        </MudItem>
-        <MudItem xs="12" sm="1" class="align-content-lg-start">
-            <MudButton OnClick="CallApi"
-                       Variant="Variant.Filled"
-                       Color="Color.Primary"
-                       Class="btnSize rounded mt-1"
-                       StartIcon="@Icons.Material.Filled.Send">
-                Send
-            </MudButton>
-        </MudItem>
-    </MudGrid>
-</MudPaper>
+                          Class="chat2-input" />
+            <MudIconButton Icon="@Icons.Material.Filled.Send"
+                           OnClick="CallApi"
+                           Class="send2-btn"
+                           aria-label="Send" />
+        </div>
+
+    </div>
+</div>
 
 <style>
-    .chat-bubble {
-        padding: 12px 18px;
+    .chat2-page {
+        min-height: 100vh;
+        background-color: #f0f9ff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+    }
+
+    .chat2-container {
+        width: 100%;
+        max-width: 800px;
+        background: #ffffff;
         border-radius: 16px;
-        max-width: 70%;
-        font-size: 0.95rem;
+        border: 1px solid #e0f2fe;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.04), 0 10px 28px rgba(8,145,178,0.07);
+        display: flex;
+        flex-direction: column;
+        min-height: 82vh;
+        overflow: hidden;
     }
 
-        .chat-bubble.you {
-            background-color: #e3f2fd;
-        }
-
-        .chat-bubble.other {
-            background-color: #f5f5f5;
-        }
-
-    .chat-history {
-        scroll-behavior: smooth;
-        transition: all 0.3s ease;
+    /* Header */
+    .chat2-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #e0f2fe;
+        background: #ffffff;
     }
 
-    .modern-chat {
-        backdrop-filter: blur(3px);
-        background-color: rgba(255, 255, 255, 0.95);
+    .chat2-header-left { display: flex; align-items: center; }
+
+    .chat2-logo-wrap {
+        width: 38px;
+        height: 38px;
+        background: #cffafe;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
-    .animate-fade {
-        animation: fadeIn 0.3s ease-in-out;
+    .chat2-title {
+        font-weight: 700;
+        font-size: 1rem;
+        color: #111827;
     }
 
-    @@keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(5px);
-        }
+    .chat2-online {
+        font-size: 0.72rem;
+        color: #9ca3af;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
 
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+    .online2-dot {
+        width: 7px;
+        height: 7px;
+        background: #22c55e;
+        border-radius: 50%;
+        display: inline-block;
+        animation: blink2 2s ease infinite;
+    }
+
+    .chat2-group-badge {
+        display: flex;
+        align-items: center;
+        background: #f0f9ff;
+        border: 1px solid #bae6fd;
+        border-radius: 20px;
+        padding: 0.28rem 0.8rem;
+        font-size: 0.75rem;
+        color: #0891b2;
+        font-weight: 500;
+    }
+
+    /* Messages */
+    .chat2-messages {
+        flex: 1;
+        padding: 1.25rem 1.5rem;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+        background: #f8fdff;
+        scrollbar-width: thin;
+        scrollbar-color: #bae6fd transparent;
+    }
+
+    .chat2-messages::-webkit-scrollbar { width: 5px; }
+    .chat2-messages::-webkit-scrollbar-track { background: transparent; }
+    .chat2-messages::-webkit-scrollbar-thumb { background: #bae6fd; border-radius: 10px; }
+
+    .msg2-row {
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+    }
+
+    .msg2-you   { justify-content: flex-end; }
+    .msg2-other { justify-content: flex-start; }
+
+    .msg2-ava { align-self: flex-end; }
+
+    .bubble2 {
+        max-width: 62%;
+        padding: 0.6rem 1rem 0.5rem;
+        border-radius: 14px;
+        word-break: break-word;
+        line-height: 1.5;
+    }
+
+    .bubble2-you {
+        background: #0891b2;
+        border-bottom-right-radius: 4px;
+        box-shadow: 0 2px 8px rgba(8,145,178,0.2);
+    }
+
+    .bubble2-other {
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+        border-bottom-left-radius: 4px;
+    }
+
+    .bubble2-text {
+        font-size: 0.92rem;
+        color: #111827;
+    }
+
+    .bubble2-you .bubble2-text { color: #ffffff; }
+
+    .bubble2-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 4px;
+        gap: 8px;
+    }
+
+    .bubble2-author {
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: rgba(255,255,255,0.65);
+    }
+
+    .other2-author { color: #6b7280; }
+
+    .bubble2-time {
+        font-size: 0.66rem;
+        color: rgba(255,255,255,0.5);
+    }
+
+    .other2-time { color: #9ca3af; }
+
+    .chat2-empty {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem 0;
+    }
+
+    /* Input */
+    .chat2-input-bar {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.9rem 1.25rem;
+        border-top: 1px solid #e0f2fe;
+        background: #ffffff;
+    }
+
+    .chat2-input { flex: 1; }
+
+    .send2-btn {
+        background-color: #0891b2 !important;
+        color: #ffffff !important;
+        border-radius: 10px !important;
+        width: 40px !important;
+        height: 40px !important;
+        min-width: 40px !important;
+        box-shadow: 0 2px 8px rgba(8,145,178,0.22) !important;
+        flex-shrink: 0;
+        transition: background-color 0.15s, transform 0.15s !important;
+    }
+
+    .send2-btn:hover {
+        background-color: #0e7490 !important;
+        transform: scale(1.06) !important;
+    }
+
+    /* Animations */
+    .animate2-msg { animation: msg2In 0.25s ease; }
+
+    @@keyframes msg2In {
+        from { opacity: 0; transform: translateY(6px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @@keyframes blink2 {
+        0%, 100% { opacity: 1; }
+        50%       { opacity: 0.3; }
     }
 
     @@media (max-width: 600px) {
-        .chat-bubble {
-            max-width: 85%;
-        }
+        .bubble2 { max-width: 80%; }
+        .chat2-container { border-radius: 0; min-height: 100vh; }
+        .chat2-page { padding: 0; }
     }
 </style>
-

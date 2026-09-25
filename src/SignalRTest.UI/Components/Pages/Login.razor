@@ -1,23 +1,28 @@
-﻿@page "/"
+@page "/"
 @inject HttpClient Http
 @inject NavigationManager Navigation
 
+<div class="login-page-bg">
+    <div class="login-card-wrapper">
+        <div class="login-card">
 
+            <div class="login-icon-wrap">
+                <MudIcon Icon="@Icons.Material.Filled.ChatBubble" Class="login-icon" />
+            </div>
 
-<MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="d-flex justify-center align-center" Style="height: 100vh">
-    <MudPaper Elevation="12" Class="pa-5" Style="width: 400px; border-radius: 16px; background-color: white;">
-        <MudCardContent>
-            <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-5" Color="Color.Dark"> Chanoholic</MudText>
+            <MudText Typo="Typo.h5" Align="Align.Center" Class="login-title mb-1">Chanoholic</MudText>
+            <MudText Typo="Typo.body2" Align="Align.Center" Class="login-subtitle mb-5">Welcome back — sign in to continue</MudText>
 
             @if (!string.IsNullOrEmpty(Error))
             {
-                <MudAlert Severity="Severity.Error" Dense="true" Elevation="0" Class="mb-3">@Error</MudAlert>
+                <MudAlert Severity="Severity.Error" Dense="true" Elevation="0" Class="mb-4">@Error</MudAlert>
             }
 
             <MudTextField @bind-Value="Username"
-                          Label="Email"
+                          Label="Email address"
                           Variant="Variant.Outlined"
-                          Adornment="Adornment.Start" Placeholder="Email"
+                          Adornment="Adornment.Start"
+                          Placeholder="you@example.com"
                           AdornmentIcon="@Icons.Material.Filled.Email"
                           Class="mb-3" />
 
@@ -25,23 +30,108 @@
                           Label="Password"
                           Variant="Variant.Outlined"
                           InputType="InputType.Password"
-                          Adornment="Adornment.Start" Placeholder="Password"
-
+                          Adornment="Adornment.Start"
+                          Placeholder="Enter your password"
                           AdornmentIcon="@Icons.Material.Filled.Lock"
-                          Class="mb-4" />
+                          Class="mb-5" />
 
             <MudButton OnClick="HandleLogin"
                        Variant="Variant.Filled"
-                       Color="Color.Dark"
                        FullWidth="true"
-                       Style="height: 45px;">Login</MudButton>
-        </MudCardContent>
+                       Class="login-btn">
+                Sign In
+            </MudButton>
 
-        <MudCardActions Class="justify-center mt-3">
-            <MudText Typo="Typo.body2">
-                Don't have an account?
-                <MudLink Href="/SignIn" Color="Color.Primary" Class="ml-1">Sign up</MudLink>
-            </MudText>
-        </MudCardActions>
-    </MudPaper>
-</MudContainer>
+            <MudDivider Class="my-4" />
+
+            <div class="login-footer">
+                <MudText Typo="Typo.body2" Class="login-footer-text">
+                    Don't have an account?
+                    <MudLink Href="/SignIn" Class="login-link ml-1">Create one</MudLink>
+                </MudText>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<style>
+    .login-page-bg {
+        min-height: 100vh;
+        background-color: #f5f5f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+    }
+
+    .login-card-wrapper {
+        animation: fadeUp 0.4s ease;
+    }
+
+    .login-card {
+        width: 420px;
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 2.75rem 2.5rem 2rem;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.04), 0 12px 32px rgba(0,0,0,0.07);
+    }
+
+    .login-icon-wrap {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 1.1rem;
+    }
+
+    .login-icon {
+        font-size: 2.4rem !important;
+        color: #4f46e5 !important;
+    }
+
+    .login-title {
+        color: #111827 !important;
+        font-weight: 700 !important;
+        letter-spacing: -0.3px;
+    }
+
+    .login-subtitle {
+        color: #6b7280 !important;
+        display: block;
+        text-align: center;
+    }
+
+    .login-btn {
+        background-color: #4f46e5 !important;
+        color: #ffffff !important;
+        font-weight: 600 !important;
+        height: 46px;
+        border-radius: 10px !important;
+        letter-spacing: 0.2px;
+        box-shadow: 0 2px 8px rgba(79,70,229,0.25) !important;
+        transition: background-color 0.2s, box-shadow 0.2s, transform 0.15s !important;
+    }
+
+    .login-btn:hover {
+        background-color: #4338ca !important;
+        box-shadow: 0 4px 14px rgba(79,70,229,0.35) !important;
+        transform: translateY(-1px);
+    }
+
+    .login-footer { text-align: center; }
+
+    .login-footer-text { color: #6b7280 !important; }
+
+    .login-link {
+        color: #4f46e5 !important;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .login-link:hover { text-decoration: underline; }
+
+    @@keyframes fadeUp {
+        from { opacity: 0; transform: translateY(16px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+</style>

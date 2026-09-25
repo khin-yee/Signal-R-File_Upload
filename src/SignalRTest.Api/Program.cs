@@ -35,25 +35,25 @@ builder.Services.AddSingleton<IMongoClient>(sp =>
 });
 
 // Add Hangfire Config
-builder.Services.AddHangfire((sp, config) =>
+builder.Services.AddHangfire((sp, hangfireConfig) =>
 {
-    var client = sp.GetRequiredService<IMongoClient>();
-    var settings = sp.GetRequiredService<IOptions<HangFireMongoOptions>>().Value;
-    var opt = new MongoStorageOptions
-    {
-        //CheckQueuedJobsStrategy = CheckQueuedJobsStrategy.TailNotificationsCollection,
-        MigrationOptions = new MongoMigrationOptions
-        {
-            MigrationStrategy = new DropMongoMigrationStrategy(),
-            BackupStrategy = new CollectionMongoBackupStrategy(),
-        },
-        SupportsCappedCollection = false,
-        CheckConnection = false,
-
-    };
-    config.UseMongoStorage(client, settings.DatabaseName, opt);
+    var options = sp.GetRequiredService<IOptions<HangFireMongoOptions>>().Value;
+    hangfireConfig.SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+          .UseSimpleAssemblyNameTypeSerializer()
+          .UseRecommendedSerializerSettings()
+          .UseMongoStorage(options.ConnectionString, options.DatabaseName, new MongoStorageOptions
+          {
+              MigrationOptions = new MongoMigrationOptions
+              {
+                  MigrationStrategy = new MigrateMongoMigrationStrategy(),
+                  BackupStrategy = new CollectionMongoBackupStrategy()
+              },
+              Prefix = "hangfire",
+              CheckConnection = true
+          });
 });
 builder.Services.AddHangfireServer();
+
 builder.Services.AddSwaggerGen();
 builder.Services.AddSignalR();
 builder.Services.AddScoped<ISignalRService, SignalRService>();
