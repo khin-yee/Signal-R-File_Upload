@@ -52,7 +52,11 @@ builder.Services.AddHangfire((sp, hangfireConfig) =>
               CheckConnection = true
           });
 });
-builder.Services.AddHangfireServer();
+builder.Services.AddHangfireServer(options =>
+{
+    // Reduce polling interval from default 15s → 500ms for near-instant message delivery
+    options.SchedulePollingInterval = TimeSpan.FromMilliseconds(100);
+});
 
 builder.Services.AddSwaggerGen();
 builder.Services.AddSignalR();

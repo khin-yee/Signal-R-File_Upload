@@ -9,10 +9,6 @@
       {
         "Path": "src\\SignalRTest.UI\\SignalRTest.UI.csproj",
         "Action": "Start"
-      },
-      {
-        "Path": "src\\SignalRUI2\\SignalRUI2.csproj",
-        "Action": "Start"
       }
     ]
   }

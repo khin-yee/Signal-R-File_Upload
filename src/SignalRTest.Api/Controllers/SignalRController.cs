@@ -25,14 +25,15 @@ public class SignalRController : ControllerBase
     public IActionResult GetStatus([FromBody]MessageRequest? request)
     {
         var groupId = Guid.NewGuid().ToString();
-        _backgroundJob.Enqueue<ISignalRService>(s =>
-             s.SendMessage(
-                 groupId,
-                 request!.message!,
-                 request.userid,
-                 request.sendmode,         
-                 request.recipientUserid
-             ));
+        //_backgroundJob.Enqueue<ISignalRService>(s =>
+        //     s.SendMessage(
+        //         groupId,
+        //         request!.message!,
+        //         request.userid,
+        //         request.sendmode,         
+        //         request.recipientUserid
+        //     ));
+        _service.SendMessage(groupId,request!.message!,request.userid,request.sendmode,request.recipientUserid);
         var apiresponse = new ApiResponse() { Detail = groupId };
         return Ok(apiresponse);
     }
