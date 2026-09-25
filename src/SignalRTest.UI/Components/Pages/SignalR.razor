@@ -28,6 +28,13 @@
                 {
                     @if (msg.userid == "You")
                     {
+                        @if (msg.sendmode == "Direct" && !string.IsNullOrEmpty(msg.recipientUserid))
+                        {
+                            <div class="bubble-direct-label">
+                                <MudIcon Icon="@Icons.Material.Filled.PersonPin" Style="font-size:0.7rem;" Class="me-1" />
+                                Private → @msg.recipientUserid
+                            </div>
+                        }
                         <div class="msg-row msg-you animate-msg">
                             <div class="bubble bubble-you">
                                 <div class="bubble-text">@msg.message</div>
@@ -66,7 +73,30 @@
                 </div>
             }
         </div>
-
+        <div class="send-mode-bar">
+            <MudToggleGroup T="string" @bind-Value="SendMode" SelectionMode="SelectionMode.SingleSelection"
+                            Color="Color.Primary" Class="send-mode-toggle">
+                <MudToggleItem Value="@("All")">
+                    <MudIcon Icon="@Icons.Material.Filled.Groups" Class="me-1" Style="font-size:1rem;" />
+                    Send to All
+                </MudToggleItem>
+                <MudToggleItem Value="@("Direct")">
+                    <MudIcon Icon="@Icons.Material.Filled.PersonPin" Class="me-1" Style="font-size:1rem;" />
+                    Send to User
+                </MudToggleItem>
+            </MudToggleGroup>
+            @if (IsDirectMode)
+            {
+                <MudTextField @bind-Value="RecipientUserId"
+                              Variant="Variant.Outlined"
+                              Placeholder="Enter username..."
+                              Label="Recipient"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.AlternateEmail"
+                              Margin="Margin.Dense"
+                              Class="recipient-input mt-2" />
+            }
+        </div>
         <!-- Input -->
         <div class="chat-input-bar">
             <MudTextField @bind-Value="message"
@@ -87,6 +117,28 @@
 </div>
 
 <style>
+    .send-mode-bar {
+        padding: 0.6rem 1.25rem 0;
+        background: #ffffff;
+    }
+
+    .send-mode-toggle {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .recipient-input {
+        max-width: 280px;
+    }
+
+    .bubble-direct-label {
+        font-size: 0.66rem;
+        color: rgba(255,255,255,0.6);
+        margin-top: 3px;
+        display: flex;
+        align-items: center;
+    }
     .chat-page {
         min-height: 100vh;
         background-color: #f9fafb;

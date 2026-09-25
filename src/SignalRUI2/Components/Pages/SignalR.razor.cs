@@ -4,11 +4,15 @@ using SIgnalRTest.Domain.Request;
 using SIgnalRTest.Domain.Response;
 using SignalRUI2.Services;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace SignalRUI2.Components.Pages;
 
 public partial class SignalR : ComponentBase
 {
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string Name { get; set; }
     public string? currentmessage { get; set; }
 
     public string? author { get; set; } = "others";
@@ -18,6 +22,12 @@ public partial class SignalR : ComponentBase
     [Inject]
     public ISnackbar Snackbar { get; set; } = default!;
     public List<MessageRequest> messages { get; set; } = new List<MessageRequest>();
+
+    public string SendMode { get; set; } = "All";
+    public string? RecipientUserId { get; set; }
+    public bool IsDirectMode => SendMode == "Direct";
+    private const string MyUsername = "User2";
+
 
     [Inject]
     public UtilitiesService? _service { get; set; }
@@ -32,6 +42,7 @@ public partial class SignalR : ComponentBase
         {
             await signalRService.JoinGroupAsync("123");
         }
+        await signalRService.RegisterUserAsync(MyUsername);
         ListenSignalREvent();
         await base.OnInitializedAsync();
     }
@@ -61,19 +72,25 @@ public partial class SignalR : ComponentBase
 
     public async Task<ApiResponse> CallApi()
     {
-        currentmessage =  "Calling SignalR.....";
-        author= "You";
+        currentmessage = "Calling SignalR.....";
+        author = "You";
         var messageRequest = new MessageRequest
         {
-            message  = message,
+            message = message,
             sendtime = DateTime.Now.ToShortTimeString(),
-            userid = "You"
+            userid = "You",
+            sendmode = SendMode,
+            recipientUserid = IsDirectMode ? RecipientUserId : null
         };
         messages.Add(messageRequest);
-        var response = await _service!.CallApi(message);
+        var response = await _service!.CallApi(
+            message,
+            MyUsername,
+            SendMode,
+            IsDirectMode ? RecipientUserId : null
+        );
         StateHasChanged();
         message = "";
-        //await signalRService.JoinGroupAsync(response.Detail!);
         return response;
     }
 }

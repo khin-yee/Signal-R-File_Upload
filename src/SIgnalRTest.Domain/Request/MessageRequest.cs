@@ -13,5 +13,9 @@ namespace SIgnalRTest.Domain.Request
         public string userid { get; set; }
 
         public string? sendtime { get; set; }
+
+        public string sendmode { get; set; } = "All";
+
+        public string? recipientUserid { get; set; } = null;
     }
 }

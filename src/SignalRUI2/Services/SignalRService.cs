@@ -38,6 +38,9 @@ public class SignalRService
     {
         _hubConnection.On(methodName, handler);
     }
-
+    public async Task RegisterUserAsync(string username)
+    {
+        await _hubConnection.InvokeAsync("RegisterUser", username);
+    }
 }
 

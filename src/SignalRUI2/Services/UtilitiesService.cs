@@ -10,15 +10,16 @@ public class UtilitiesService
     {
         _apiCallService = apiCallService;
     }
-    public async Task<ApiResponse> CallApi(string message)
+    public async Task<ApiResponse> CallApi(string message, string username, string sendMode = "All", string? recipientUserId = null)
     {
         var MessageRequest = new MessageRequest
         {
-            message =message,
-            userid = "User2",
-            sendtime = "test",          
+            message = message,
+            userid = username,
+            sendmode = sendMode,
+            recipientUserid = recipientUserId    
         };
-        var apiRequest = new ApiRequest(HttpMethod.Post, "/TestSignalR",MessageRequest);
+        var apiRequest = new ApiRequest(HttpMethod.Post, "/TestSignalR", MessageRequest);
         return await _apiCallService.APICall(apiRequest);
     }
 }

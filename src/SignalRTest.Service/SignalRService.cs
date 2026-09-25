@@ -24,18 +24,17 @@ public class SignalRService:ISignalRService
         var response = new ApiResponse();
         return response;
     }
-    public async Task SendMessage(string groupId,string message,string userid)
+    public async Task SendMessage(string groupId, string message, string userid, string sendMode, string? recipientUserId)
     {
-        // await _signalR.SendAll("GroupId", groupId);
-        //await _signalR.SendAll("ReceiveMessage", message);
-        await _signalR.SendSignalR("123", "ReceiveMessage", message, userid);
-        //await Task.Delay(2000);
-        //await _signalR.SendSignalR(groupId, "ReceiveMessage", message);
-        //await Task.Delay(2000);
-        //await _signalR.SendSignalR(groupId, "ReceiveMessage", message);
-        //await Task.Delay(3000);
+        if (sendMode == "Direct" && !string.IsNullOrEmpty(recipientUserId))
+        {
+            await _signalR.SendToUser(recipientUserId, "ReceiveMessage", message, userid);
+        }
+        else
+        {
+            await _signalR.SendSignalR("123", "ReceiveMessage", message, userid);
+        }
     }
 
-    
 }
 

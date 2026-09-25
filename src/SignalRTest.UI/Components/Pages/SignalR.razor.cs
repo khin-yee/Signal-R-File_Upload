@@ -16,6 +16,10 @@ public partial class SignalR : ComponentBase
     public string? message { get; set; }
     public MessageRequest? messageRequest { get; set; } = new MessageRequest();
     public List<MessageRequest> messages { get; set; } = new List<MessageRequest>();
+
+    public string SendMode { get; set; } = "All";
+    public string? RecipientUserId { get; set; }
+    public bool IsDirectMode => SendMode == "Direct";
     [Inject]
     public UtilitiesService? _service { get; set; }
 
@@ -28,6 +32,7 @@ public partial class SignalR : ComponentBase
     {
         await signalRService.StartAsync();
         await signalRService.JoinGroupAsync("123");
+        await signalRService.RegisterUserAsync(Name);
         ListenSignalREvent();
         await base.OnInitializedAsync();
     }
@@ -51,18 +56,24 @@ public partial class SignalR : ComponentBase
     }
     public async Task<ApiResponse> CallApi()
     {
-        currentmessage =  "Calling SignalR.....";
+        currentmessage = "Calling SignalR.....";
         author = "You";
-        var response = await _service!.CallApi(message!, Name);
+        var response = await _service!.CallApi(
+            message!,
+            Name,
+            SendMode,                              
+            IsDirectMode ? RecipientUserId : null  
+        );
         var messageRequest = new MessageRequest
         {
             message = message,
-            sendtime =  DateTime.Now.ToShortTimeString(),
-            userid = "You"
+            sendtime = DateTime.Now.ToShortTimeString(),
+            userid = "You",
+            recipientUserid = IsDirectMode ? RecipientUserId : null,
+            sendmode = SendMode
         };
         messages.Add(messageRequest);
         message = "";
-        //await signalRService.JoinGroupAsync(response.Detail!);
         return response;
     }
 }

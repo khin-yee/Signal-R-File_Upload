@@ -47,5 +47,9 @@ namespace SignalRTest.UI.Service
             _hubConnection.On(methodName, handler);
         }
 
+        public async Task RegisterUserAsync(string username)
+        {
+            await _hubConnection.InvokeAsync("RegisterUser", username);
+        }
     }
 }
