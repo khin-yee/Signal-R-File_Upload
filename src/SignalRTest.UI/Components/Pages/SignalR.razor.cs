@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using SignalRTest.UI.Service;
 using SIgnalRTest.Domain.Request;
@@ -56,13 +56,14 @@ public partial class SignalR : ComponentBase
     }
     public async Task<ApiResponse> CallApi()
     {
+        if (string.IsNullOrWhiteSpace(message)) return new ApiResponse();
         currentmessage = "Calling SignalR.....";
         author = "You";
         var response = await _service!.CallApi(
             message!,
             Name,
-            SendMode,                              
-            IsDirectMode ? RecipientUserId : null  
+            SendMode,
+            IsDirectMode ? RecipientUserId : null
         );
         var messageRequest = new MessageRequest
         {
@@ -76,5 +77,7 @@ public partial class SignalR : ComponentBase
         message = "";
         return response;
     }
+
+   
 }
 
