@@ -1,4 +1,5 @@
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using Newtonsoft.Json;
@@ -6,6 +7,7 @@ using SignalRTest.UI.Service;
 using SIgnalRTest.Domain.Models;
 using SIgnalRTest.Domain.Request;
 using SIgnalRTest.Domain.Response;
+
 using System.Text.RegularExpressions;
 
 namespace SignalRTest.UI.Components.Pages;
@@ -37,7 +39,7 @@ public partial class SignalR : ComponentBase
     public List<Auth0UserResponse> SearchResults { get; set; } = new();
     public string? SearchError { get; set; }
     public List<string> OnlineUsers { get; set; } = new();
-
+    // ── Logout injections ──
 
     [Inject]
     public UtilitiesService? _service { get; set; }
@@ -100,7 +102,7 @@ public partial class SignalR : ComponentBase
                 c.ContactName.Equals(userid, StringComparison.OrdinalIgnoreCase));
             if (senderConv == null)
             {
-                // New contact � add them to the list
+                // New contact — add them to the list
                 senderConv = new ConversationItem
                 {
                     ContactName     = userid,
@@ -320,6 +322,24 @@ public partial class SignalR : ComponentBase
             }
             InvokeAsync(StateHasChanged);
         });
+    }
+
+    public async Task ConfirmLogout()
+    {
+        var confirmed = await DialogService.ShowMessageBox(
+            "Sign out",
+            "Are you sure you want to sign out?",
+            yesText: "Sign out",
+            cancelText: "Cancel"
+        );
+
+        if (confirmed == true)
+        {
+            if (AuthenticationStateProvider is CustomAuthStateProvider p)
+                p.MarkUserAsLoggedOut();
+
+            Navigation.NavigateTo("/", forceLoad: true);
+        }
     }
 }
 

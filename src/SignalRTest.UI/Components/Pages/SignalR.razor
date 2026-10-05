@@ -1,6 +1,9 @@
 @page "/signalRTest"
 @using SIgnalRTest.Domain.Models
 @using SIgnalRTest.Domain.Response
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IDialogService DialogService
 
 <div class="cr-root">
 
@@ -19,6 +22,10 @@
                 @(Name?.Substring(0, 1).ToUpper() ?? "U")
                 <span class="cr-avatar-dot"></span>
             </div>
+            <button class="cr-logout-btn" @onclick="ConfirmLogout" title="Sign out">
+                <MudIcon Icon="@Icons.Material.Outlined.Logout" Style="font-size:1rem;" />
+                <span>Sign out</span>
+            </button>
         </div>
     </header>
 
@@ -288,6 +295,26 @@
         overflow: hidden;
     }
 
+    .cr-logout-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0.4rem 0.85rem;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 8px;
+        background: #ffffff;
+        color: #374151;
+        font-size: 0.82rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+
+        .cr-logout-btn:hover {
+            background: #fef2f2;
+            border-color: #fca5a5;
+            color: #dc2626;
+        }
     .page, main, .page > main, .page > main > div {
         height: 100% !important;
         padding: 0 !important;
