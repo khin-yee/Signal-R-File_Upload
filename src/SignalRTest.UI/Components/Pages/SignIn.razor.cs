@@ -32,7 +32,7 @@ public partial class SignIn : ComponentBase
     private async Task CreateAccount()
     {
         string token =await  GetManagementTokenAsync();
-        string url = "https://dev-885urtcfxbrkfg3b.us.auth0.com/api/v2/users";
+        string url = "https://dev-wfnxl8zixxnvyufc.us.auth0.com/api/v2/users";
         var newUser = new
         {
             name = Username,
@@ -67,7 +67,7 @@ public partial class SignIn : ComponentBase
     {
         var requestBody = GetRequestBody();
 
-        var url = "https://dev-885urtcfxbrkfg3b.us.auth0.com/oauth/token";
+        var url = "https://dev-wfnxl8zixxnvyufc.us.auth0.com/oauth/token";
 
         var apiRequest = new ApiRequest(HttpMethod.Post, url, requestBody, "test");
 
@@ -86,9 +86,9 @@ public partial class SignIn : ComponentBase
         return new Dictionary<string, string>
         {
             { "grant_type", "client_credentials" },
-            { "client_id", "kcOHYxPyPY5Q1ZAV1J9IdNQ8acymQLOz" },
-            { "client_secret", "Uw6Xb8mCd61mmyazpKID6os0YzG3PW8gt3y_Q9JOqrzozebRJ6QnDe2D-v6hGKxk" },
-            { "audience", "https://dev-885urtcfxbrkfg3b.us.auth0.com/api/v2/" }
+            { "client_id", "1szEdAl75eCacOPJuXo1OzNmFQWWOk8A" },
+            { "client_secret", "HexfuAYaW8ils4Dd0oT148mgxXh3iQC1IQY3kBR8o5Qf7GMQwKuDq8gUKgh0EM1N" },
+            { "audience", "https://dev-wfnxl8zixxnvyufc.us.auth0.com/api/v2/" }
         };
     }
 }

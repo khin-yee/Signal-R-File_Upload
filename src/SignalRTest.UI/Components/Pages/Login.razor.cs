@@ -24,11 +24,11 @@ public partial class Login : ComponentBase
             { "grant_type", "password" },
             { "username", Username },
             { "password", Password },
-            { "client_id", "kcOHYxPyPY5Q1ZAV1J9IdNQ8acymQLOz" },
-            { "client_secret", "Uw6Xb8mCd61mmyazpKID6os0YzG3PW8gt3y_Q9JOqrzozebRJ6QnDe2D-v6hGKxk" }
+            { "client_id", "1szEdAl75eCacOPJuXo1OzNmFQWWOk8A" },
+            { "client_secret", "HexfuAYaW8ils4Dd0oT148mgxXh3iQC1IQY3kBR8o5Qf7GMQwKuDq8gUKgh0EM1N" }
         };
 
-        var url = "https://dev-885urtcfxbrkfg3b.us.auth0.com/oauth/token";
+        var url = "https://dev-wfnxl8zixxnvyufc.us.auth0.com/oauth/token";
 
         var apirequest = new ApiRequest(HttpMethod.Post, url, payload, "aa");
 
