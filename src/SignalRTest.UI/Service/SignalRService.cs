@@ -51,5 +51,10 @@ namespace SignalRTest.UI.Service
         {
             await _hubConnection.InvokeAsync("RegisterUser", username);
         }
+
+        public void ListenUserListUpdated(Action<List<string>> handler)
+        {
+            _hubConnection.On<List<string>>("UserListUpdated", handler);
+        }
     }
 }

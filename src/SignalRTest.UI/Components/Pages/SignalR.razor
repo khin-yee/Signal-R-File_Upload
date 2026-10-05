@@ -1,12 +1,15 @@
 @page "/signalRTest"
+@using SIgnalRTest.Domain.Models
+@using SIgnalRTest.Domain.Response
 
 <div class="cr-root">
 
-    <!-- ══════════════ TOP APP BAR ══════════════ -->
+    <!-- ══ TOP APP BAR ══ -->
     <header class="cr-appbar">
         <div class="cr-appbar-left">
             <div class="cr-logo-wrap">
-                <MudIcon Icon="@Icons.Material.Filled.ChatBubbleOutline" Style="font-size:1.1rem;color:#4f46e5;" />
+                <MudIcon Icon="@Icons.Material.Filled.ChatBubbleOutline"
+                         Style="font-size:1.1rem;color:#4f46e5;" />
             </div>
             <span class="cr-app-name">Chanoholic</span>
         </div>
@@ -19,85 +22,105 @@
         </div>
     </header>
 
-    <!-- ══════════════ BODY ══════════════ -->
+    <!-- ══ BODY ══ -->
     <div class="cr-body">
 
         <!-- ── LEFT SIDEBAR ── -->
         <aside class="cr-sidebar">
 
-            <!-- Room Info -->
-            <div class="cr-sidebar-card cr-room-card">
-                <div class="cr-room-icon-wrap">
-                    <MudIcon Icon="@Icons.Material.Filled.Forum" Style="font-size:1.1rem;color:#4f46e5;" />
-                </div>
-                <div>
-                    <div class="cr-room-name">Chat Room</div>
-                    <div class="cr-room-meta">
-                        <span class="cr-pulse-dot"></span>
-                        Group · 123
-                    </div>
-                </div>
-            </div>
-
-            <!-- Members -->
-            <div class="cr-sidebar-section">
-                <div class="cr-section-title">
-                    <MudIcon Icon="@Icons.Material.Outlined.People" Style="font-size:0.9rem;color:#9ca3af;" />
-                    Members
-                </div>
-                <div class="cr-members">
-                    <div class="cr-member cr-member-you">
-                        <div class="cr-member-ava" style="background:#ede9fe;color:#4f46e5;">
-                            @(Name?.Substring(0, 1).ToUpper() ?? "U")
-                        </div>
-                        <span class="cr-member-name">@Name</span>
-                        <span class="cr-you-badge">You</span>
-                        <span class="cr-member-dot"></span>
-                    </div>
-                    <div class="cr-member">
-                        <div class="cr-member-ava" style="background:#fce7f3;color:#be185d;">A</div>
-                        <span class="cr-member-name">Alice</span>
-                        <span class="cr-member-dot"></span>
-                    </div>
-                    <div class="cr-member">
-                        <div class="cr-member-ava" style="background:#d1fae5;color:#065f46;">B</div>
-                        <span class="cr-member-name">Bob</span>
-                        <span class="cr-member-dot"></span>
-                    </div>
-                    <div class="cr-member">
-                        <div class="cr-member-ava" style="background:#fef3c7;color:#92400e;">U</div>
-                        <span class="cr-member-name">User2</span>
-                        <span class="cr-member-dot"></span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Send Mode -->
-            <div class="cr-sidebar-section">
-                <div class="cr-section-title">
-                    <MudIcon Icon="@Icons.Material.Outlined.Send" Style="font-size:0.9rem;color:#9ca3af;" />
-                    Send to
-                </div>
-                <div class="cr-mode-pills">
-                    <button class="cr-mode-pill @(SendMode == "All" ? "cr-mode-active" : "")"
-                            @onclick='() => SendMode = "All"'>
-                        <MudIcon Icon="@Icons.Material.Filled.Groups" Style="font-size:1rem;" />
-                        Everyone
-                    </button>
-                    <button class="cr-mode-pill @(SendMode == "Direct" ? "cr-mode-active" : "")"
-                            @onclick='() => SendMode = "Direct"'>
-                        <MudIcon Icon="@Icons.Material.Filled.PersonPin" Style="font-size:1rem;" />
-                        Direct message
-                    </button>
-                </div>
-                @if (IsDirectMode)
+            <!-- Search bar -->
+            <div class="cr-search-bar">
+                <MudIcon Icon="@Icons.Material.Outlined.Search" Class="cr-search-icon" />
+                <input class="cr-search-input"
+                       placeholder="Search users..."
+                       @bind="SearchQuery"
+                       @bind:event="oninput"
+                       @onkeydown="HandleSearchKey" />
+                @if (IsSearching)
                 {
-                    <div class="cr-recipient-wrap">
-                        <MudIcon Icon="@Icons.Material.Filled.AlternateEmail" Class="cr-recipient-icon" />
-                        <input class="cr-recipient-input"
-                               placeholder="Recipient username..."
-                               @bind="RecipientUserId"
-                               @bind:event="oninput" />
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true"
+                                         Style="width:16px;height:16px;color:#4f46e5;" />
+                }
+                else if (!string.IsNullOrWhiteSpace(SearchQuery))
+                {
+                    <button class="cr-search-go" @onclick="SearchUsers">Go</button>
+                }
+            </div>
+
+            <!-- Search results dropdown -->
+            @if (SearchResults.Any())
+            {
+                <div class="cr-search-results">
+                    <div class="cr-search-results-title">Auth0 Users</div>
+                    @foreach (var user in SearchResults)
+                    {
+                        <div class="cr-search-row" @onclick="() => StartDirectChat(user)">
+                            <div class="cr-search-ava"
+                                 style="background:@GetAvatarColor(user.DisplayName);color:@GetAvatarTextColor(user.DisplayName);">
+                                @user.DisplayName.Substring(0, 1).ToUpper()
+                            </div>
+                            <div class="cr-search-info">
+                                <div class="cr-search-name">@user.DisplayName</div>
+                                <div class="cr-search-email">@user.Email</div>
+                            </div>
+                            @if (user.IsOnline)
+                            {
+                                <span class="cr-search-online">● Online</span>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            else if (!string.IsNullOrEmpty(SearchError))
+            {
+                <div class="cr-search-error">@SearchError</div>
+            }
+
+            <!-- Conversation list -->
+            <div class="cr-conv-section-title">Chats</div>
+            <div class="cr-conv-list">
+                @foreach (var conv in Conversations)
+                {
+                    <div class="cr-conv-row @(ActiveConversation?.ContactName == conv.ContactName ? "cr-conv-active" : "")"
+                         @onclick="() => SelectConversation(conv)">
+
+                        <!-- Avatar -->
+                        <div class="cr-conv-ava-wrap">
+                            @if (conv.IsGroup)
+                            {
+                                <div class="cr-conv-ava cr-conv-ava-group">
+                                    <MudIcon Icon="@Icons.Material.Filled.Groups"
+                                             Style="font-size:1rem;color:#4f46e5;" />
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="cr-conv-ava"
+                                     style="background:@conv.AvatarColor;color:@conv.AvatarTextColor;">
+                                    @conv.ContactName.Substring(0, 1).ToUpper()
+                                </div>
+                                @if (conv.IsOnline)
+                                {
+                                    <span class="cr-conv-online-dot"></span>
+                                }
+                            }
+                        </div>
+
+                        <!-- Info -->
+                        <div class="cr-conv-info">
+                            <div class="cr-conv-name-row">
+                                <span class="cr-conv-name">@conv.ContactName</span>
+                                <span class="cr-conv-time">@conv.LastMessageTime</span>
+                            </div>
+                            <div class="cr-conv-preview-row">
+                                <span class="cr-conv-preview">@conv.LastMessage</span>
+                                @if (conv.UnreadCount > 0)
+                                {
+                                    <span class="cr-conv-badge">@conv.UnreadCount</span>
+                                }
+                            </div>
+                        </div>
+
                     </div>
                 }
             </div>
@@ -107,112 +130,157 @@
         <!-- ── MAIN CHAT ── -->
         <main class="cr-main">
 
-            <!-- Chat Header -->
-            <div class="cr-chat-header">
-                <div class="cr-chat-header-left">
-                    <MudIcon Icon="@Icons.Material.Outlined.Tag" Style="font-size:1rem;color:#9ca3af;" />
-                    <span class="cr-chat-room-label">general</span>
-                    <span class="cr-chat-divider">·</span>
-                    <span class="cr-chat-group">Group 123</span>
+            @if (ActiveConversation == null)
+            {
+                <!-- No conversation selected -->
+                <div class="cr-no-conv">
+                    <MudIcon Icon="@Icons.Material.Outlined.ChatBubbleOutline"
+                             Style="font-size:3rem;color:#c7d2fe;" />
+                    <div class="cr-no-conv-title">Select a conversation</div>
+                    <div class="cr-no-conv-sub">Choose from the list or search for a user</div>
                 </div>
-                <div class="cr-chat-header-right">
-                    <span class="cr-online-pill">
-                        <span class="cr-pulse-dot"></span>
-                        Live
-                    </span>
-                </div>
-            </div>
-
-            <!-- Messages -->
-            <div class="cr-messages" id="crMessages">
-
-                <!-- Date separator -->
-                <div class="cr-date-sep"><span>Today</span></div>
-
-                @if (messages?.Any() == true)
-                {
-                    @foreach (var msg in messages)
-                    {
-                        @if (msg.userid == "You")
+            }
+            else
+            {
+                <!-- Dynamic chat header -->
+                <div class="cr-chat-header">
+                    <div class="cr-chat-header-left">
+                        @if (ActiveConversation.IsGroup)
                         {
-                            <!-- Sent message -->
-                            <div class="cr-msg-group cr-msg-group-you">
-                                @if (msg.sendmode == "Direct" && !string.IsNullOrEmpty(msg.recipientUserid))
-                                {
-                                    <div class="cr-private-badge">
-                                        <MudIcon Icon="@Icons.Material.Filled.Lock" Style="font-size:0.65rem;" />
-                                        Private &rarr; @msg.recipientUserid
-                                    </div>
-                                }
-                                <div class="cr-msg-row cr-msg-you">
-                                    <div class="cr-bubble cr-bubble-you">
-                                        <div class="cr-bubble-text">@msg.message</div>
-                                        <div class="cr-bubble-footer">
-                                            <span class="cr-bubble-time">@msg.sendtime</span>
-                                            <MudIcon Icon="@Icons.Material.Filled.DoneAll" Style="font-size:0.7rem;color:rgba(255,255,255,0.6);" />
-                                        </div>
-                                    </div>
-                                    <div class="cr-msg-ava cr-ava-you">
-                                        @msg.userid.Substring(0, 1).ToUpper()
-                                    </div>
+                            <div class="cr-chat-ava-sm cr-chat-ava-group">
+                                <MudIcon Icon="@Icons.Material.Filled.Groups"
+                                         Style="font-size:1rem;color:#4f46e5;" />
+                            </div>
+                            <div>
+                                <div class="cr-chat-contact-name">Group Chat</div>
+                                <div class="cr-chat-status-online">
+                                    <span class="cr-pulse-dot"></span>
+                                    All members · Live
                                 </div>
                             </div>
                         }
                         else
                         {
-                            <!-- Received message -->
-                            <div class="cr-msg-group cr-msg-group-other">
-                                <div class="cr-other-sender">@msg.userid</div>
-                                <div class="cr-msg-row cr-msg-other">
-                                    <div class="cr-msg-ava cr-ava-other">
-                                        @msg.userid.Substring(0, 1).ToUpper()
+                            <div class="cr-chat-ava-sm"
+                                 style="background:@ActiveConversation.AvatarColor;
+                                        color:@ActiveConversation.AvatarTextColor;">
+                                @ActiveConversation.ContactName.Substring(0, 1).ToUpper()
+                            </div>
+                            <div>
+                                <div class="cr-chat-contact-name">@ActiveConversation.ContactName</div>
+                                @if (ActiveConversation.IsOnline)
+                                {
+                                    <div class="cr-chat-status-online">
+                                        <span class="cr-pulse-dot"></span>Online
                                     </div>
-                                    <div class="cr-bubble cr-bubble-other">
-                                        <div class="cr-bubble-text">@msg.message</div>
-                                        <div class="cr-bubble-footer cr-footer-other">
-                                            <span class="cr-bubble-time cr-time-other">@msg.sendtime</span>
+                                }
+                                else
+                                {
+                                    <div class="cr-chat-status-offline">Offline</div>
+                                }
+                            </div>
+                        }
+                    </div>
+                    <div class="cr-chat-header-right">
+                        <span class="cr-online-pill">
+                            <span class="cr-pulse-dot"></span> Live
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Messages -->
+                <div class="cr-messages" id="crMessages">
+                    <div class="cr-date-sep"><span>Today</span></div>
+
+                    @if (ActiveMessages.Any())
+                    {
+                        @foreach (var msg in ActiveMessages)
+                        {
+                            @if (msg.userid == "You")
+                            {
+                                <div class="cr-msg-group cr-msg-group-you">
+                                    @if (msg.sendmode == "Direct" && !string.IsNullOrEmpty(msg.recipientUserid))
+                                    {
+                                        <div class="cr-private-badge">
+                                            <MudIcon Icon="@Icons.Material.Filled.Lock"
+                                                     Style="font-size:0.65rem;" />
+                                            Private &rarr; @msg.recipientUserid
+                                        </div>
+                                    }
+                                    <div class="cr-msg-row cr-msg-you">
+                                        <div class="cr-bubble cr-bubble-you">
+                                            <div class="cr-bubble-text">@msg.message</div>
+                                            <div class="cr-bubble-footer">
+                                                <span class="cr-bubble-time">@msg.sendtime</span>
+                                                <MudIcon Icon="@Icons.Material.Filled.DoneAll"
+                                                         Style="font-size:0.7rem;color:rgba(255,255,255,0.6);" />
+                                            </div>
+                                        </div>
+                                        <div class="cr-msg-ava cr-ava-you">
+                                            @msg.userid.Substring(0, 1).ToUpper()
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            }
+                            else
+                            {
+                                <div class="cr-msg-group cr-msg-group-other">
+                                    <div class="cr-other-sender">@msg.userid</div>
+                                    <div class="cr-msg-row cr-msg-other">
+                                        <div class="cr-msg-ava cr-ava-other">
+                                            @msg.userid.Substring(0, 1).ToUpper()
+                                        </div>
+                                        <div class="cr-bubble cr-bubble-other">
+                                            <div class="cr-bubble-text">@msg.message</div>
+                                            <div class="cr-bubble-footer cr-footer-other">
+                                                <span class="cr-bubble-time cr-time-other">@msg.sendtime</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
                         }
                     }
-                }
-                else
-                {
-                    <div class="cr-empty">
-                        <div class="cr-empty-icon-wrap">
-                            <MudIcon Icon="@Icons.Material.Outlined.ChatBubbleOutline" Style="font-size:2.5rem;color:#c7d2fe;" />
+                    else
+                    {
+                        <div class="cr-empty">
+                            <div class="cr-empty-icon-wrap">
+                                <MudIcon Icon="@Icons.Material.Outlined.ChatBubbleOutline"
+                                         Style="font-size:2.5rem;color:#c7d2fe;" />
+                            </div>
+                            <div class="cr-empty-title">No messages yet</div>
+                            <div class="cr-empty-sub">
+                                @(ActiveConversation.IsGroup
+                                    ? "Be the first to say hello to everyone 👋"
+                                    : $"Start a conversation with {ActiveConversation.ContactName}")
+                            </div>
                         </div>
-                        <div class="cr-empty-title">No messages yet</div>
-                        <div class="cr-empty-sub">Be the first to say hello 👋</div>
-                    </div>
-                }
-            </div>
-
-            <!-- Compose Bar -->
-            <div class="cr-compose">
-                <div class="cr-compose-inner">
-                    <MudIcon Icon="@Icons.Material.Outlined.EmojiEmotions" Class="cr-compose-emoji" />
-                    <input class="cr-compose-input"
-                           placeholder="Write a message..."
-                           @bind="message"
-                           @bind:event="oninput"
-                           />
-                    <button class="cr-send-btn" @onclick="CallApi">
-                        <MudIcon Icon="@Icons.Material.Filled.Send" Style="font-size:1.1rem;color:#ffffff;" />
-                    </button>
+                    }
                 </div>
-            </div>
+
+                <!-- Compose bar -->
+                <div class="cr-compose">
+                    <div class="cr-compose-inner">
+                        <MudIcon Icon="@Icons.Material.Outlined.EmojiEmotions"
+                                 Class="cr-compose-emoji" />
+                        <input class="cr-compose-input"
+                               placeholder="@($"Message {ActiveConversation.ContactName}...")"
+                               @bind="message"
+                               @bind:event="oninput"
+                               @onkeydown="HandleKeyDown" />
+                        <button class="cr-send-btn" @onclick="CallApi">
+                            <MudIcon Icon="@Icons.Material.Filled.Send"
+                                     Style="font-size:1.1rem;color:#ffffff;" />
+                        </button>
+                    </div>
+                </div>
+            }
 
         </main>
     </div>
 </div>
 
 <style>
-    /* ═══════════════════════════════════════════
-       ROOT — escape Blazor layout wrappers
-    ═══════════════════════════════════════════ */
     html, body {
         margin: 0 !important;
         padding: 0 !important;
@@ -220,7 +288,6 @@
         overflow: hidden;
     }
 
-    /* Override Blazor's .page and main layout containers */
     .page, main, .page > main, .page > main > div {
         height: 100% !important;
         padding: 0 !important;
@@ -229,14 +296,13 @@
         display: block;
     }
 
-    /* Top-row in layout — hide it on the chat page */
     .top-row {
         display: none !important;
     }
 
     .cr-root {
         position: fixed;
-        inset: 0;               /* top:0 right:0 bottom:0 left:0 */
+        inset: 0;
         display: flex;
         flex-direction: column;
         background: #f9fafb;
@@ -245,19 +311,16 @@
         overflow: hidden;
     }
 
-    /* ═══════════════════════════════════════════
-       TOP APP BAR
-    ═══════════════════════════════════════════ */
+    /* APP BAR */
     .cr-appbar {
         height: 56px;
-        background: #ffffff;
+        background: #fff;
         border-bottom: 1px solid #f3f4f6;
         display: flex;
         align-items: center;
         justify-content: space-between;
         padding: 0 1.5rem;
         flex-shrink: 0;
-        z-index: 10;
     }
 
     .cr-appbar-left {
@@ -280,7 +343,6 @@
         font-weight: 700;
         font-size: 1rem;
         color: #111827;
-        letter-spacing: -0.2px;
     }
 
     .cr-appbar-right {
@@ -300,14 +362,13 @@
         height: 34px;
         background: #4f46e5;
         border-radius: 50%;
-        color: #ffffff;
+        color: #fff;
         font-weight: 700;
         font-size: 0.82rem;
         display: flex;
         align-items: center;
         justify-content: center;
         position: relative;
-        cursor: default;
     }
 
     .cr-avatar-dot {
@@ -317,245 +378,277 @@
         width: 9px;
         height: 9px;
         background: #22c55e;
-        border: 2px solid #ffffff;
+        border: 2px solid #fff;
         border-radius: 50%;
     }
 
-    /* ═══════════════════════════════════════════
-       BODY
-    ═══════════════════════════════════════════ */
+    /* BODY */
     .cr-body {
         display: flex;
         flex: 1;
         overflow: hidden;
     }
 
-    /* ═══════════════════════════════════════════
-       SIDEBAR
-    ═══════════════════════════════════════════ */
+    /* SIDEBAR */
     .cr-sidebar {
-        width: 260px;
+        width: 280px;
         flex-shrink: 0;
-        background: #ffffff;
+        background: #fff;
         border-right: 1px solid #f3f4f6;
         display: flex;
         flex-direction: column;
-        gap: 0;
         overflow-y: auto;
-        padding: 1rem 0.85rem;
         scrollbar-width: none;
     }
 
-    .cr-sidebar::-webkit-scrollbar { display: none; }
+        .cr-sidebar::-webkit-scrollbar {
+            display: none;
+        }
 
-    /* Room card */
-    .cr-sidebar-card {
+    /* Search */
+    .cr-search-bar {
         display: flex;
         align-items: center;
-        gap: 10px;
-        padding: 0.75rem 0.85rem;
-        border-radius: 12px;
-        margin-bottom: 1rem;
+        gap: 6px;
+        margin: 0.75rem 0.85rem 0.5rem;
+        background: #f3f4f6;
+        border-radius: 10px;
+        padding: 0 10px;
+        transition: box-shadow 0.15s;
     }
 
-    .cr-room-card {
-        background: #f5f3ff;
-        border: 1px solid #ede9fe;
-    }
+        .cr-search-bar:focus-within {
+            box-shadow: 0 0 0 2px #c7d2fe;
+            background: #fff;
+        }
 
-    .cr-room-icon-wrap {
-        width: 36px;
-        height: 36px;
-        background: #ede9fe;
-        border-radius: 9px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    .cr-search-icon {
+        color: #9ca3af !important;
+        font-size: 1rem !important;
         flex-shrink: 0;
     }
 
-    .cr-room-name {
-        font-weight: 600;
-        font-size: 0.88rem;
+    .cr-search-input {
+        flex: 1;
+        border: none;
+        background: transparent;
+        height: 36px;
+        font-size: 0.85rem;
         color: #111827;
+        outline: none;
     }
 
-    .cr-room-meta {
-        font-size: 0.72rem;
-        color: #9ca3af;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        margin-top: 2px;
+        .cr-search-input::placeholder {
+            color: #9ca3af;
+        }
+
+    .cr-search-go {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #4f46e5;
+        border: none;
+        background: none;
+        cursor: pointer;
+        padding: 2px 4px;
     }
 
-    /* Section */
-    .cr-sidebar-section {
-        margin-bottom: 1.25rem;
+    /* Search results */
+    .cr-search-results {
+        margin: 0 0.85rem 0.5rem;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
 
-    .cr-section-title {
-        font-size: 0.72rem;
+    .cr-search-results-title {
+        font-size: 0.68rem;
         font-weight: 600;
         color: #9ca3af;
         text-transform: uppercase;
-        letter-spacing: 0.6px;
+        letter-spacing: 0.5px;
+        padding: 0.5rem 0.75rem 0.25rem;
+    }
+
+    .cr-search-row {
         display: flex;
         align-items: center;
-        gap: 5px;
-        padding: 0 0.25rem;
-        margin-bottom: 0.6rem;
+        gap: 10px;
+        padding: 0.5rem 0.75rem;
+        cursor: pointer;
+        transition: background 0.12s;
     }
 
-    /* Members */
-    .cr-members {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-    }
+        .cr-search-row:hover {
+            background: #f5f3ff;
+        }
 
-    .cr-member {
-        display: flex;
-        align-items: center;
-        gap: 9px;
-        padding: 0.45rem 0.6rem;
-        border-radius: 8px;
-        transition: background 0.15s;
-        cursor: default;
-    }
-
-    .cr-member:hover { background: #f9fafb; }
-
-    .cr-member-you { background: #fafafa; }
-
-    .cr-member-ava {
-        width: 28px;
-        height: 28px;
+    .cr-search-ava {
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.75rem;
+        font-size: 0.8rem;
         font-weight: 700;
         flex-shrink: 0;
     }
 
-    .cr-member-name {
-        font-size: 0.85rem;
-        color: #374151;
-        font-weight: 500;
+    .cr-search-info {
         flex: 1;
+        min-width: 0;
+    }
+
+    .cr-search-name {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #111827;
+    }
+
+    .cr-search-email {
+        font-size: 0.72rem;
+        color: #9ca3af;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
-    .cr-you-badge {
-        font-size: 0.62rem;
-        background: #ede9fe;
-        color: #4f46e5;
-        border-radius: 4px;
-        padding: 1px 5px;
-        font-weight: 600;
-        flex-shrink: 0;
+    .cr-search-online {
+        font-size: 0.7rem;
+        color: #16a34a;
+        font-weight: 500;
+        white-space: nowrap;
     }
 
-    .cr-member-dot {
-        width: 7px;
-        height: 7px;
-        background: #22c55e;
-        border-radius: 50%;
-        flex-shrink: 0;
+    .cr-search-error {
+        margin: 0 0.85rem 0.5rem;
+        font-size: 0.8rem;
+        color: #dc2626;
+        background: #fef2f2;
+        border-radius: 8px;
+        padding: 0.4rem 0.75rem;
     }
 
-    /* Mode pills */
-    .cr-mode-pills {
+    /* Conversation list */
+    .cr-conv-section-title {
+        font-size: 0.68rem;
+        font-weight: 700;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        padding: 0.5rem 1rem 0.25rem;
+    }
+
+    .cr-conv-list {
         display: flex;
         flex-direction: column;
-        gap: 6px;
     }
 
-    .cr-mode-pill {
+    .cr-conv-row {
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 0.5rem 0.85rem;
-        border-radius: 9px;
-        border: 1.5px solid #e5e7eb;
-        background: #ffffff;
-        font-size: 0.84rem;
-        font-weight: 500;
-        color: #374151;
+        gap: 10px;
+        padding: 0.65rem 1rem;
         cursor: pointer;
-        transition: all 0.15s;
-        width: 100%;
-        text-align: left;
+        transition: background 0.12s;
+        position: relative;
     }
 
-    .cr-mode-pill:hover {
-        border-color: #c7d2fe;
-        background: #f5f3ff;
-        color: #4f46e5;
+        .cr-conv-row:hover {
+            background: #f9fafb;
+        }
+
+    .cr-conv-active {
+        background: #f5f3ff !important;
+        border-right: 3px solid #4f46e5;
     }
 
-    .cr-mode-active {
-        background: #4f46e5 !important;
-        border-color: #4f46e5 !important;
-        color: #ffffff !important;
-        box-shadow: 0 2px 8px rgba(79,70,229,0.25);
+    /* Conv avatar */
+    .cr-conv-ava-wrap {
+        position: relative;
+        flex-shrink: 0;
     }
 
-    /* Recipient input */
-    .cr-recipient-wrap {
+    .cr-conv-ava {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
         display: flex;
         align-items: center;
-        margin-top: 0.6rem;
-        background: #f9fafb;
-        border: 1.5px solid #e5e7eb;
-        border-radius: 9px;
-        padding: 0 10px;
-        transition: border-color 0.15s;
-        animation: slideDown 0.2s ease;
+        justify-content: center;
+        font-size: 1rem;
+        font-weight: 700;
     }
 
-    .cr-recipient-wrap:focus-within {
-        border-color: #4f46e5;
-        background: #ffffff;
+    .cr-conv-ava-group {
+        background: #ede9fe;
     }
 
-    .cr-recipient-icon {
-        color: #9ca3af !important;
-        font-size: 0.9rem !important;
-        flex-shrink: 0;
-    }
-
-    .cr-recipient-input {
-        flex: 1;
-        border: none;
-        background: transparent;
-        height: 36px;
-        font-size: 0.83rem;
-        color: #111827;
-        outline: none;
-        padding: 0 6px;
-    }
-
-    .cr-recipient-input::placeholder { color: #d1d5db; }
-
-    /* Pulse dot */
-    .cr-pulse-dot {
-        display: inline-block;
-        width: 7px;
-        height: 7px;
+    .cr-conv-online-dot {
+        position: absolute;
+        bottom: 1px;
+        right: 1px;
+        width: 10px;
+        height: 10px;
         background: #22c55e;
+        border: 2px solid #fff;
         border-radius: 50%;
-        animation: pulse 2s infinite;
+    }
+
+    /* Conv info */
+    .cr-conv-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .cr-conv-name-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .cr-conv-name {
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: #111827;
+    }
+
+    .cr-conv-time {
+        font-size: 0.68rem;
+        color: #9ca3af;
         flex-shrink: 0;
     }
 
-    /* ═══════════════════════════════════════════
-       MAIN CHAT
-    ═══════════════════════════════════════════ */
+    .cr-conv-preview-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 2px;
+    }
+
+    .cr-conv-preview {
+        font-size: 0.78rem;
+        color: #6b7280;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 1;
+    }
+
+    .cr-conv-badge {
+        background: #4f46e5;
+        color: #fff;
+        font-size: 0.65rem;
+        font-weight: 700;
+        border-radius: 10px;
+        padding: 1px 6px;
+        flex-shrink: 0;
+        margin-left: 4px;
+    }
+
+    /* MAIN */
     .cr-main {
         flex: 1;
         display: flex;
@@ -563,10 +656,32 @@
         overflow: hidden;
     }
 
+    /* No conversation */
+    .cr-no-conv {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        background: #f9fafb;
+    }
+
+    .cr-no-conv-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #374151;
+    }
+
+    .cr-no-conv-sub {
+        font-size: 0.85rem;
+        color: #9ca3af;
+    }
+
     /* Chat header */
     .cr-chat-header {
-        height: 52px;
-        background: #ffffff;
+        height: 60px;
+        background: #fff;
         border-bottom: 1px solid #f3f4f6;
         display: flex;
         align-items: center;
@@ -578,19 +693,42 @@
     .cr-chat-header-left {
         display: flex;
         align-items: center;
-        gap: 7px;
+        gap: 12px;
     }
 
-    .cr-chat-room-label {
-        font-weight: 600;
-        font-size: 0.92rem;
+    .cr-chat-ava-sm {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    .cr-chat-ava-group {
+        background: #ede9fe;
+    }
+
+    .cr-chat-contact-name {
+        font-weight: 700;
+        font-size: 0.95rem;
         color: #111827;
     }
 
-    .cr-chat-divider { color: #d1d5db; }
+    .cr-chat-status-online {
+        font-size: 0.72rem;
+        color: #16a34a;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
 
-    .cr-chat-group {
-        font-size: 0.8rem;
+    .cr-chat-status-offline {
+        font-size: 0.72rem;
         color: #9ca3af;
     }
 
@@ -607,7 +745,7 @@
         padding: 3px 10px;
     }
 
-    /* Messages area */
+    /* Messages */
     .cr-messages {
         flex: 1;
         overflow-y: auto;
@@ -615,15 +753,20 @@
         display: flex;
         flex-direction: column;
         gap: 0.5rem;
+        background: #f9fafb;
         scrollbar-width: thin;
         scrollbar-color: #e5e7eb transparent;
     }
 
-    .cr-messages::-webkit-scrollbar { width: 4px; }
-    .cr-messages::-webkit-scrollbar-track { background: transparent; }
-    .cr-messages::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
+        .cr-messages::-webkit-scrollbar {
+            width: 4px;
+        }
 
-    /* Date separator */
+        .cr-messages::-webkit-scrollbar-thumb {
+            background: #e5e7eb;
+            border-radius: 10px;
+        }
+
     .cr-date-sep {
         display: flex;
         align-items: center;
@@ -631,22 +774,19 @@
         margin: 0.5rem 0 1rem;
     }
 
-    .cr-date-sep::before,
-    .cr-date-sep::after {
-        content: '';
-        flex: 1;
-        height: 1px;
-        background: #f3f4f6;
-    }
+        .cr-date-sep::before, .cr-date-sep::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #f3f4f6;
+        }
 
-    .cr-date-sep span {
-        font-size: 0.72rem;
-        color: #9ca3af;
-        font-weight: 500;
-        white-space: nowrap;
-    }
+        .cr-date-sep span {
+            font-size: 0.72rem;
+            color: #9ca3af;
+            font-weight: 500;
+        }
 
-    /* Message groups */
     .cr-msg-group {
         display: flex;
         flex-direction: column;
@@ -654,8 +794,15 @@
         animation: msgIn 0.22s ease;
     }
 
-    .cr-msg-group-you { align-self: flex-end; align-items: flex-end; }
-    .cr-msg-group-other { align-self: flex-start; align-items: flex-start; }
+    .cr-msg-group-you {
+        align-self: flex-end;
+        align-items: flex-end;
+    }
+
+    .cr-msg-group-other {
+        align-self: flex-start;
+        align-items: flex-start;
+    }
 
     .cr-msg-row {
         display: flex;
@@ -663,10 +810,10 @@
         gap: 8px;
     }
 
-    .cr-msg-you   { flex-direction: row-reverse; }
-    .cr-msg-other { flex-direction: row; }
+    .cr-msg-you {
+        flex-direction: row-reverse;
+    }
 
-    /* Avatars */
     .cr-msg-ava {
         width: 30px;
         height: 30px;
@@ -677,13 +824,18 @@
         font-size: 0.72rem;
         font-weight: 700;
         flex-shrink: 0;
-        align-self: flex-end;
     }
 
-    .cr-ava-you   { background: #ede9fe; color: #4f46e5; }
-    .cr-ava-other { background: #f3f4f6; color: #374151; }
+    .cr-ava-you {
+        background: #ede9fe;
+        color: #4f46e5;
+    }
 
-    /* Sender name */
+    .cr-ava-other {
+        background: #f3f4f6;
+        color: #374151;
+    }
+
     .cr-other-sender {
         font-size: 0.72rem;
         font-weight: 600;
@@ -692,13 +844,11 @@
         margin-bottom: 3px;
     }
 
-    /* Bubbles */
     .cr-bubble {
         padding: 0.55rem 0.9rem 0.45rem;
         border-radius: 16px;
         word-break: break-word;
         line-height: 1.5;
-        max-width: 100%;
     }
 
     .cr-bubble-you {
@@ -708,7 +858,7 @@
     }
 
     .cr-bubble-other {
-        background: #ffffff;
+        background: #fff;
         border: 1px solid #e5e7eb;
         border-bottom-left-radius: 4px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
@@ -719,7 +869,9 @@
         color: #111827;
     }
 
-    .cr-bubble-you .cr-bubble-text { color: #ffffff; }
+    .cr-bubble-you .cr-bubble-text {
+        color: #fff;
+    }
 
     .cr-bubble-footer {
         display: flex;
@@ -729,16 +881,19 @@
         margin-top: 3px;
     }
 
-    .cr-footer-other { justify-content: flex-start; }
+    .cr-footer-other {
+        justify-content: flex-start;
+    }
 
     .cr-bubble-time {
         font-size: 0.64rem;
         color: rgba(255,255,255,0.55);
     }
 
-    .cr-time-other { color: #9ca3af; }
+    .cr-time-other {
+        color: #9ca3af;
+    }
 
-    /* Private badge */
     .cr-private-badge {
         display: inline-flex;
         align-items: center;
@@ -751,10 +906,8 @@
         border-radius: 20px;
         padding: 2px 8px;
         margin-bottom: 4px;
-        align-self: flex-end;
     }
 
-    /* Empty state */
     .cr-empty {
         flex: 1;
         display: flex;
@@ -785,14 +938,13 @@
     .cr-empty-sub {
         font-size: 0.82rem;
         color: #9ca3af;
+        text-align: center;
     }
 
-    /* ═══════════════════════════════════════════
-       COMPOSE BAR
-    ═══════════════════════════════════════════ */
+    /* Compose */
     .cr-compose {
         padding: 0.85rem 1.25rem;
-        background: #ffffff;
+        background: #fff;
         border-top: 1px solid #f3f4f6;
         flex-shrink: 0;
     }
@@ -807,20 +959,16 @@
         transition: box-shadow 0.15s;
     }
 
-    .cr-compose-inner:focus-within {
-        box-shadow: 0 0 0 2px #c7d2fe;
-        background: #ffffff;
-    }
+        .cr-compose-inner:focus-within {
+            box-shadow: 0 0 0 2px #c7d2fe;
+            background: #fff;
+        }
 
     .cr-compose-emoji {
         color: #9ca3af !important;
         font-size: 1.2rem !important;
         flex-shrink: 0;
-        cursor: pointer;
-        transition: color 0.15s;
     }
-
-    .cr-compose-emoji:hover { color: #4f46e5 !important; }
 
     .cr-compose-input {
         flex: 1;
@@ -833,7 +981,14 @@
         min-width: 0;
     }
 
-    .cr-compose-input::placeholder { color: #9ca3af; }
+        .cr-compose-input::placeholder {
+            color: #9ca3af;
+        }
+
+        .cr-compose-input:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
 
     .cr-send-btn {
         width: 36px;
@@ -846,41 +1001,60 @@
         justify-content: center;
         cursor: pointer;
         flex-shrink: 0;
-        transition: background 0.15s, transform 0.12s, box-shadow 0.15s;
         box-shadow: 0 2px 6px rgba(79,70,229,0.3);
+        transition: background 0.15s, transform 0.12s;
     }
 
-    .cr-send-btn:hover {
-        background: #4338ca;
-        transform: scale(1.08);
-        box-shadow: 0 4px 12px rgba(79,70,229,0.4);
+        .cr-send-btn:hover {
+            background: #4338ca;
+            transform: scale(1.08);
+        }
+
+    /* Pulse dot */
+    .cr-pulse-dot {
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        background: #22c55e;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+        flex-shrink: 0;
     }
 
-    .cr-send-btn:active { transform: scale(0.96); }
-
-    /* ═══════════════════════════════════════════
-       ANIMATIONS
-    ═══════════════════════════════════════════ */
     @@keyframes msgIn {
-        from { opacity: 0; transform: translateY(8px); }
-        to   { opacity: 1; transform: translateY(0); }
+        from {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
     @@keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50%       { opacity: 0.35; }
+        0%, 100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.35;
+        }
     }
 
-    @@keyframes slideDown {
-        from { opacity: 0; transform: translateY(-6px); }
-        to   { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ═══════════════════════════════════════════
-       RESPONSIVE
-    ═══════════════════════════════════════════ */
     @@media (max-width: 768px) {
-        .cr-sidebar { display: none; }
-        .cr-msg-group { max-width: 85%; }
+        .cr-sidebar {
+            width: 100%;
+            display: @(ActiveConversation == null ? "flex" : "none");
+        }
+
+        .cr-main {
+            display: @(ActiveConversation != null ? "flex" : "none");
+        }
+
+        .cr-msg-group {
+            max-width: 85%;
+        }
     }
 </style>

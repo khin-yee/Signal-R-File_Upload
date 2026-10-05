@@ -36,5 +36,21 @@ namespace SignalRTest.UI.Service
             var apiRequest = new ApiRequest(HttpMethod.Post, "/TestSignalR", MessageRequest);
             return await _apiCallService.APICall(apiRequest);
         }
+
+        public async Task<ApiResponse> GetUsers(string? search = null)
+        {
+            var url = string.IsNullOrWhiteSpace(search)
+                ? "/GetUsers"
+                : $"/GetUsers?search={Uri.EscapeDataString(search)}";
+            var apiRequest = new ApiRequest(HttpMethod.Get, url, null);
+            return await _apiCallService.APICall(apiRequest);
+        }
+
+        public async Task<ApiResponse> ValidateUser(string usernameOrEmail)
+        {
+            var url = $"/ValidateUser?usernameOrEmail={Uri.EscapeDataString(usernameOrEmail)}";
+            var apiRequest = new ApiRequest(HttpMethod.Get, url, null);
+            return await _apiCallService.APICall(apiRequest);
+        }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Hangfire;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using SignalRTest.Service.SignalRClient;
 using SIgnalRTest.Domain.IServices;
 using SIgnalRTest.Domain.Request;
 using SIgnalRTest.Domain.Response;
@@ -36,6 +37,33 @@ public class SignalRController : ControllerBase
         _service.SendMessage(groupId,request!.message!,request.userid,request.sendmode,request.recipientUserid);
         var apiresponse = new ApiResponse() { Detail = groupId };
         return Ok(apiresponse);
+    }
+
+    [HttpGet("/GetUsers")]
+    public async Task<IActionResult> GetUsers([FromQuery] string? search = null)
+    {
+        var users = await _service.GetAuth0Users(search);
+        // Mark each user as online if their DisplayName is in the SignalR registry
+        var onlineUsers = SignalRHub.GetOnlineUsers()
+            .Select(u => u.ToLower())
+            .ToHashSet();
+        foreach (var user in users)
+        {
+            user.IsOnline = onlineUsers.Contains(user.DisplayName.ToLower())
+                         || onlineUsers.Contains(user.Email.ToLower());
+        }
+        return Ok(users);
+    }
+
+    [HttpGet("/ValidateUser")]
+    public async Task<IActionResult> ValidateUser([FromQuery] string usernameOrEmail)
+    {
+        if (string.IsNullOrWhiteSpace(usernameOrEmail))
+            return BadRequest(new ApiResponse { ErrorCode = "02", ErrorMessage = "usernameOrEmail is required" });
+        var user = await _service.ValidateAuth0User(usernameOrEmail);
+        if (user == null)
+            return NotFound(new ApiResponse { ErrorCode = "03", ErrorMessage = $"User '{usernameOrEmail}' not found in Auth0" });
+        return Ok(user);
     }
 }
 

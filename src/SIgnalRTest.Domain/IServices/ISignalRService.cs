@@ -1,4 +1,5 @@
-﻿using SIgnalRTest.Domain.Response;
+﻿using SIgnalRTest.Domain.Models;
+using SIgnalRTest.Domain.Response;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,5 +13,7 @@ namespace SIgnalRTest.Domain.IServices
     {
         Task SendMessage(string groupId, string message, string userid, string sendMode, string? recipientUserId);
         ApiResponse MessageCreate(string groupId);
+        Task<List<Auth0UserResponse>> GetAuth0Users(string? searchQuery = null);
+        Task<Auth0UserResponse?> ValidateAuth0User(string usernameOrEmail);
     }
 }

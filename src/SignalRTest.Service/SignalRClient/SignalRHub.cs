@@ -18,11 +18,13 @@ public class SignalRHub : Hub
     {
         _singnalRhub = singnalRhub;
     }
-    public Task RegisterUser(string username)
+    public async  Task RegisterUser(string username)
     {
         _userConnections[username] = Context.ConnectionId;
-        return Task.CompletedTask;
+        await BroadcastUserList();
     }
+
+    public static IEnumerable<string> GetOnlineUsers() => _userConnections.Keys;
     public async Task SendToUser(string recipientUsername, string method, string message, string senderUserId)
     {
         if (_userConnections.TryGetValue(recipientUsername, out var connectionId))
@@ -55,5 +57,11 @@ public class SignalRHub : Hub
             _userConnections.TryRemove(entry.Key, out _);
         }
         return base.OnDisconnectedAsync(exception);
+    }
+    // Pushes current online user list to every connected client
+    private async Task BroadcastUserList()
+    {
+        var users = _userConnections.Keys.ToList();
+        await _singnalRhub.Clients.All.SendAsync("UserListUpdated", users);
     }
 }
