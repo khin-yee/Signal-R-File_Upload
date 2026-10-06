@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace SIgnalRTest.Domain.Models
 {
+
     public class ConversationItem
     {
         public string ContactName { get; set; } = "";      // username or "Group"
@@ -17,5 +18,6 @@ namespace SIgnalRTest.Domain.Models
         public int UnreadCount { get; set; } = 0;          // badge number
         public string AvatarColor { get; set; } = "#ede9fe"; // bg colour
         public string AvatarTextColor { get; set; } = "#4f46e5";
+        public DateTime? LastSeen { get; set; } = null;
     }
 }

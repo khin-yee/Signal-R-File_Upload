@@ -11,7 +11,7 @@ using SIgnalRTest.Domain.Response;
 using System.Text.RegularExpressions;
 
 namespace SignalRTest.UI.Components.Pages;
-public partial class SignalR : ComponentBase
+public partial class SignalR : ComponentBase, IDisposable
 {
     [Parameter]
     [SupplyParameterFromQuery]
@@ -40,6 +40,7 @@ public partial class SignalR : ComponentBase
     public string? SearchError { get; set; }
     public List<string> OnlineUsers { get; set; } = new();
     // ── Logout injections ──
+    private System.Threading.Timer? _lastSeenTimer;
 
     [Inject]
     public UtilitiesService? _service { get; set; }
@@ -49,12 +50,19 @@ public partial class SignalR : ComponentBase
 
     [Inject]
     public required SignalRService signalRService { get; set; }
+
+    public void Dispose()
+    {
+        _lastSeenTimer?.Dispose();
+    }
     protected override async Task OnInitializedAsync()
     {
         await signalRService.StartAsync();
         await signalRService.JoinGroupAsync("123");
+        ListenSignalREvent();
+        ListenUserListEvent();
+        ListenLastSeenEvent();
         await signalRService.RegisterUserAsync(Name);
-
         var groupConv = new ConversationItem
         {
             ContactName    = "Group Chat",
@@ -66,9 +74,12 @@ public partial class SignalR : ComponentBase
         };
         Conversations.Add(groupConv);
         ConversationMessages["Group Chat"] = new List<MessageRequest>();
-        //SelectConversation(groupConv); // default open = Group Chat
-        ListenSignalREvent();
-        ListenUserListEvent();
+
+        _lastSeenTimer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(StateHasChanged);
+        }, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
+    
         await LoadAllUsers();
         await base.OnInitializedAsync();
     }
@@ -105,7 +116,7 @@ public partial class SignalR : ComponentBase
                 // New contact — add them to the list
                 senderConv = new ConversationItem
                 {
-                    ContactName     = userid,
+                    ContactName     = Name,
                     IsGroup         = false,
                     IsOnline        = true,
                     AvatarColor     = GetAvatarColor(userid),
@@ -134,7 +145,47 @@ public partial class SignalR : ComponentBase
             InvokeAsync(StateHasChanged);
         });
     }
-
+    private void ListenLastSeenEvent()
+    {
+        signalRService.ListenLastSeenUpdated(async lastSeenData =>
+        {
+            foreach (var kvp in lastSeenData)
+            {
+                // Match by display name or email prefix
+                var conv = Conversations.FirstOrDefault(c =>
+                    !c.IsGroup && (
+                        c.ContactName.Equals(kvp.Key, StringComparison.OrdinalIgnoreCase) ||
+                        c.ContactEmail.Equals(kvp.Key, StringComparison.OrdinalIgnoreCase) ||
+                        kvp.Key.Split('@')[0].Equals(c.ContactName, StringComparison.OrdinalIgnoreCase)
+                    ));
+                if (conv != null && DateTime.TryParse(kvp.Value, null,
+                    System.Globalization.DateTimeStyles.RoundtripKind, out var lastSeenUtc))
+                {
+                    conv.LastSeen = lastSeenUtc;
+                }
+            }
+            await InvokeAsync(StateHasChanged);
+        });
+    }
+    public string GetLastSeenText(ConversationItem conv)
+    {
+        if (conv.IsGroup) return "All members";
+        if (conv.IsOnline) return "Online";
+        if (conv.LastSeen == null) return "Offline";
+        var diff = DateTime.UtcNow - conv.LastSeen.Value;
+        if (diff.TotalMinutes < 1) return "Active just now";
+        if (diff.TotalMinutes < 60) return $"Active {(int)diff.TotalMinutes}m ago";
+        if (diff.TotalHours < 24) return $"Active {(int)diff.TotalHours}h ago";
+        if (diff.TotalDays < 7) return $"Active {(int)diff.TotalDays}d ago";
+        return $"Last seen {conv.LastSeen.Value.ToLocalTime():MMM d}";
+    }
+    private bool IsUserOnline(string contactName, string contactEmail = "")
+    {
+        return OnlineUsers.Any(u =>
+            u.Equals(contactName, StringComparison.OrdinalIgnoreCase) ||
+            u.Equals(contactEmail, StringComparison.OrdinalIgnoreCase) ||
+            u.Split('@')[0].Equals(contactName, StringComparison.OrdinalIgnoreCase));
+    }
     public void SelectConversation(ConversationItem conv)
     {
         ActiveConversation  = conv;
@@ -201,7 +252,7 @@ public partial class SignalR : ComponentBase
                 ContactName     = name,
                 ContactEmail    = user.Email,
                 IsGroup         = false,
-                IsOnline        = OnlineUsers.Contains(name, StringComparer.OrdinalIgnoreCase),
+                IsOnline = IsUserOnline(name, user.Email),
                 AvatarColor     = GetAvatarColor(name),
                 AvatarTextColor = GetAvatarTextColor(name)
             };
@@ -290,7 +341,7 @@ public partial class SignalR : ComponentBase
             {
                 foreach (var user in users)
                 {
-                    var displayName = user.DisplayName;
+                    var displayName = user.Name;
                     if (displayName.Equals(Name, StringComparison.OrdinalIgnoreCase)) continue;
                     if (!Conversations.Any(c => c.ContactName.Equals(displayName, StringComparison.OrdinalIgnoreCase)))
                     {
@@ -313,14 +364,12 @@ public partial class SignalR : ComponentBase
 
     private void ListenUserListEvent()
     {
-        signalRService.ListenUserListUpdated(onlineUserNames =>
+        signalRService.ListenUserListUpdated(async onlineUserNames =>
         {
             OnlineUsers = onlineUserNames;
             foreach (var conv in Conversations.Where(c => !c.IsGroup))
-            {
-                conv.IsOnline = OnlineUsers.Contains(conv.ContactName, StringComparer.OrdinalIgnoreCase);
-            }
-            InvokeAsync(StateHasChanged);
+                conv.IsOnline = IsUserOnline(conv.ContactName, conv.ContactEmail);
+            await InvokeAsync(StateHasChanged); // ✅ properly awaited
         });
     }
 
@@ -335,6 +384,8 @@ public partial class SignalR : ComponentBase
 
         if (confirmed == true)
         {
+            await signalRService.UnregisterUserAsync(Name);
+            await signalRService.StopAsync();
             if (AuthenticationStateProvider is CustomAuthStateProvider p)
                 p.MarkUserAsLoggedOut();
 

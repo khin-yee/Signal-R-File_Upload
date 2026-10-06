@@ -119,8 +119,18 @@
                                 <span class="cr-conv-name">@conv.ContactName</span>
                                 <span class="cr-conv-time">@conv.LastMessageTime</span>
                             </div>
+
                             <div class="cr-conv-preview-row">
-                                <span class="cr-conv-preview">@conv.LastMessage</span>
+                                @if (!conv.IsGroup)
+                                {
+                                    <span class="cr-conv-lastseen @(conv.IsOnline ? "cr-lastseen-online" : "cr-lastseen-offline")">
+                                        @GetLastSeenText(conv)
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="cr-conv-preview">@conv.LastMessage</span>
+                                }
                                 @if (conv.UnreadCount > 0)
                                 {
                                     <span class="cr-conv-badge">@conv.UnreadCount</span>
@@ -175,16 +185,13 @@
                             </div>
                             <div>
                                 <div class="cr-chat-contact-name">@ActiveConversation.ContactName</div>
-                                @if (ActiveConversation.IsOnline)
-                                {
-                                    <div class="cr-chat-status-online">
-                                        <span class="cr-pulse-dot"></span>Online
-                                    </div>
-                                }
-                                else
-                                {
-                                    <div class="cr-chat-status-offline">Offline</div>
-                                }
+                                <div class="cr-chat-status-@(ActiveConversation.IsOnline ? "online" : "offline")">
+                                    @if (ActiveConversation.IsOnline)
+                                    {
+                                        <span class="cr-pulse-dot"></span>
+                                    }
+                                    @GetLastSeenText(ActiveConversation)
+                                </div>
                             </div>
                         }
                     </div>
@@ -310,6 +317,16 @@
         transition: background 0.15s, border-color 0.15s, color 0.15s;
     }
 
+    .cr-lastseen-online {
+        font-size: 0.75rem;
+        color: #16a34a;
+        font-weight: 500;
+    }
+
+    .cr-lastseen-offline {
+        font-size: 0.75rem;
+        color: #9ca3af;
+    }
         .cr-logout-btn:hover {
             background: #fef2f2;
             border-color: #fca5a5;

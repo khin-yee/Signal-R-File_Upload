@@ -14,6 +14,9 @@ public class SignalRHub : Hub
 
     private static readonly ConcurrentDictionary<string, string> _userConnections
        = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    private static readonly ConcurrentDictionary<string, DateTime> _lastSeen
+       = new ConcurrentDictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
     public SignalRHub (IHubContext<SignalRHub> singnalRhub)
     {
         _singnalRhub = singnalRhub;
@@ -48,20 +51,37 @@ public class SignalRHub : Hub
     {
         await Groups.AddToGroupAsync(Context.ConnectionId, groupId);
     }
-    public override Task OnDisconnectedAsync(Exception? exception)
+    public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        // Find the entry where value matches this connection and remove it
         var entry = _userConnections.FirstOrDefault(x => x.Value == Context.ConnectionId);
         if (entry.Key != null)
         {
             _userConnections.TryRemove(entry.Key, out _);
+            // ✅ Safety net: record last seen if UnregisterUser wasn't called
+            _lastSeen[entry.Key] = DateTime.UtcNow;
+            await BroadcastUserList();
+            await BroadcastLastSeen();
         }
-        return base.OnDisconnectedAsync(exception);
+        await base.OnDisconnectedAsync(exception);
     }
-    // Pushes current online user list to every connected client
     private async Task BroadcastUserList()
     {
         var users = _userConnections.Keys.ToList();
         await _singnalRhub.Clients.All.SendAsync("UserListUpdated", users);
+    }
+
+    private async Task BroadcastLastSeen()
+    {
+        var lastSeenData = _lastSeen.ToDictionary(
+            kvp => kvp.Key,
+            kvp => kvp.Value.ToString("o")   // ISO 8601 — "2026-10-06T05:00:00.000Z"
+        );
+        await _singnalRhub.Clients.All.SendAsync("LastSeenUpdated", lastSeenData);
+    }
+    public static IDictionary<string, DateTime> GetLastSeenTimes() => _lastSeen;
+    public async Task UnregisterUser(string username)
+    {
+        _userConnections.TryRemove(username, out _);
+        await BroadcastUserList();
     }
 }

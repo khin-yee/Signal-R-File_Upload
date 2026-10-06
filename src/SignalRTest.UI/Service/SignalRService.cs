@@ -52,9 +52,18 @@ namespace SignalRTest.UI.Service
             await _hubConnection.InvokeAsync("RegisterUser", username);
         }
 
-        public void ListenUserListUpdated(Action<List<string>> handler)
+        public async Task UnregisterUserAsync(string username)
+        {
+            await _hubConnection.InvokeAsync("UnregisterUser", username);
+        }
+        public void ListenUserListUpdated(Func<List<string>, Task> handler)
         {
             _hubConnection.On<List<string>>("UserListUpdated", handler);
+        }
+
+        public void ListenLastSeenUpdated(Func<Dictionary<string, string>, Task> handler)
+        {
+            _hubConnection.On<Dictionary<string, string>>("LastSeenUpdated", handler);
         }
     }
 }
