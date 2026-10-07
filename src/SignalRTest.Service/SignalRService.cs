@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SignalRTest.Service.SignalRClient;
 using SIgnalRTest.Domain.IServices;
+using SIgnalRTest.Domain.Models;
 using SIgnalRTest.Domain.Response;
 using System;
 using System.Collections.Generic;
@@ -22,11 +23,13 @@ public class SignalRService:ISignalRService
 
     private readonly IHttpClientFactory _httpClientFactory;
 
-    public SignalRService (SignalRHub signalR,IConfiguration configuration, IHttpClientFactory httpClientFactory)
+    private readonly IMessageRepository _messageRepository;
+    public SignalRService (SignalRHub signalR,IConfiguration configuration, IHttpClientFactory httpClientFactory, IMessageRepository messageRepo)
     {
         _signalR = signalR;
         _configuration = configuration;
         _httpClientFactory = httpClientFactory;
+        _messageRepository = messageRepo;
     }
     public ApiResponse MessageCreate(string groupId)
     {
@@ -34,6 +37,17 @@ public class SignalRService:ISignalRService
     }
     public async Task SendMessage(string groupId, string message, string userid, string sendMode, string? recipientUserId)
     {
+        await _messageRepository.SaveAsync(new ChatMessage
+        {
+            SenderId      = userid,
+            RecipientId   = sendMode == "Direct" ? recipientUserId : null,
+            SendMode      = sendMode,
+            GroupId       = groupId,
+            Message       = message,
+            SentAt        = DateTime.UtcNow,
+            SentAtDisplay = DateTime.Now.ToShortTimeString()
+        });
+
         if (sendMode == "Direct" && !string.IsNullOrEmpty(recipientUserId))
         {
             await _signalR.SendToUser(recipientUserId, "ReceiveMessage", message, userid);
@@ -90,6 +104,16 @@ public class SignalRService:ISignalRService
     {
         var users = await GetAuth0Users(usernameOrEmail);
         return users?.FirstOrDefault();
+    }
+    public async Task<List<ChatMessage>> GetMessages(string currentUserId, string sendMode,string? contactId = null, string groupId = "123",DateTime? after = null)
+    {
+        if (sendMode == "All")
+            return await _messageRepository.GetGroupMessagesAsync(groupId, after);
+
+        if (!string.IsNullOrEmpty(contactId))
+            return await _messageRepository.GetDirectMessagesAsync(currentUserId, contactId, after);
+
+        return new List<ChatMessage>();
     }
 }
 

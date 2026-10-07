@@ -52,5 +52,19 @@ namespace SignalRTest.UI.Service
             var apiRequest = new ApiRequest(HttpMethod.Get, url, null);
             return await _apiCallService.APICall(apiRequest);
         }
+
+        public async Task<ApiResponse> GetMessages(string currentUserId,string sendMode = "All",string? contactId = null,string groupId = "123",DateTime? after = null)
+        {
+            var url = sendMode == "All"
+                ? $"/GetMessages?currentUserId={Uri.EscapeDataString(currentUserId)}" +
+                  $"&sendMode=All&groupId={groupId}"
+                : $"/GetMessages?currentUserId={Uri.EscapeDataString(currentUserId)}" +
+                  $"&sendMode=Direct&contactId={Uri.EscapeDataString(contactId ?? "")}";
+            // Append after= for incremental sync
+            if (after.HasValue)
+                url += $"&after={Uri.EscapeDataString(after.Value.ToString("o"))}";
+            var apiRequest = new ApiRequest(HttpMethod.Get, url, null);
+            return await _apiCallService.APICall(apiRequest);
+        }
     }
 }

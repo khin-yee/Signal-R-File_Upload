@@ -65,5 +65,28 @@ public class SignalRController : ControllerBase
             return NotFound(new ApiResponse { ErrorCode = "03", ErrorMessage = $"User '{usernameOrEmail}' not found in Auth0" });
         return Ok(user);
     }
+
+    [HttpGet("/GetMessages")]
+    public async Task<IActionResult> GetMessages(
+    [FromQuery] string currentUserId,
+    [FromQuery] string sendMode = "All",
+    [FromQuery] string? contactId = null,
+    [FromQuery] string groupId = "123",
+    [FromQuery] string? after = null)   // ISO 8601 UTC string
+    {
+        // Parse the "after" timestamp for incremental sync
+        DateTime? afterDate = null;
+        if (!string.IsNullOrEmpty(after) &&
+            DateTime.TryParse(after, null,
+                System.Globalization.DateTimeStyles.RoundtripKind, out var parsed))
+        {
+            afterDate = parsed;
+        }
+
+        var messages = await _service.GetMessages(
+            currentUserId, sendMode, contactId, groupId, afterDate);
+
+        return Ok(messages);
+    }
 }
 

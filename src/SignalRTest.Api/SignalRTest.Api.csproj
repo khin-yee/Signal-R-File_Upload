@@ -12,12 +12,14 @@
 		<PackageReference Include="Hangfire.Mongo" Version="1.11.6" />
 		<PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.2.0" />
 		<PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.0" />
+		<PackageReference Include="MongoDB.Driver" Version="3.4.0" />
 		<PackageReference Include="MudBlazor" Version="8.7.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\SignalRTest.Repository\SignalRTest.Repository.csproj" />
 		<ProjectReference Include="..\SignalRTest.UI\SignalRTest.UI.csproj" />
 	</ItemGroup>
 	<ItemGroup>

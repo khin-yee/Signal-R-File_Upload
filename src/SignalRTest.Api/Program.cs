@@ -5,6 +5,7 @@ using Hangfire.Mongo.Migration.Strategies.Backup;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using SignalRTest.Api;
+using SignalRTest.Repository;
 using SignalRTest.Service;
 using SignalRTest.Service.SignalRClient;
 using SIgnalRTest.Domain.IServices;
@@ -33,6 +34,7 @@ builder.Services.AddSingleton<IMongoClient>(sp =>
     var settings = sp.GetRequiredService<IOptions<HangFireMongoOptions>>().Value;
     return new MongoClient(settings.ConnectionString);
 });
+builder.Services.AddScoped<IMessageRepository, MessageRepository>();
 
 // Add Hangfire Config
 builder.Services.AddHangfire((sp, hangfireConfig) =>
