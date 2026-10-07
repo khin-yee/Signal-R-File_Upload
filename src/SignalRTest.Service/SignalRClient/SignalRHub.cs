@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.SignalR;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -82,6 +82,13 @@ public class SignalRHub : Hub
     public async Task UnregisterUser(string username)
     {
         _userConnections.TryRemove(username, out _);
+
+        // ✅ Record last seen time
+        _lastSeen[username] = DateTime.UtcNow;
+
         await BroadcastUserList();
+
+        // ✅ Broadcast last seen to all clients so they update immediately
+        await BroadcastLastSeen();
     }
 }
