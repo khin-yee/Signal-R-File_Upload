@@ -17,5 +17,7 @@ namespace SIgnalRTest.Domain.Request
         public string sendmode { get; set; } = "All";
 
         public string? recipientUserid { get; set; } = null;
+
+        public string? groupId { get; set; } = null;
     }
 }

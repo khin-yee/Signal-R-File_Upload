@@ -91,4 +91,27 @@ public class SignalRHub : Hub
         // ✅ Broadcast last seen to all clients so they update immediately
         await BroadcastLastSeen();
     }
+
+    public async Task SendGroupMessage(string groupId, string message, string userid)
+    {
+        await _singnalRhub.Clients.Group(groupId)
+            .SendAsync("ReceiveGroupMessage", message, userid,
+                       DateTime.Now.ToShortTimeString(), groupId);
+    }
+
+    public async Task NotifyGroupCreated(string groupId, string groupName,
+    string createdBy, List<string> members)
+    {
+        foreach (var member in members)
+        {
+            if (_userConnections.TryGetValue(member, out var connId))
+            {
+                // Add online member to the SignalR group room immediately
+                await _singnalRhub.Groups.AddToGroupAsync(connId, groupId);
+                // Notify them of the new group
+                await _singnalRhub.Clients.Client(connId)
+                    .SendAsync("GroupCreated", groupId, groupName, createdBy, members);
+            }
+        }
+    }
 }

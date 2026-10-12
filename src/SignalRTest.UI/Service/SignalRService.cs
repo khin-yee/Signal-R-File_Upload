@@ -65,5 +65,24 @@ namespace SignalRTest.UI.Service
         {
             _hubConnection.On<Dictionary<string, string>>("LastSeenUpdated", handler);
         }
+
+        // ✅ Join a custom group room (reuses existing hub JoinGroup method)
+        public async Task JoinCustomGroupAsync(string groupId)
+        {
+            await _hubConnection.InvokeAsync("JoinGroup", groupId);
+        }
+
+        // ✅ Listen for group messages (4 params: message, senderUserId, sendtime, groupId)
+        public void ListenGroupMessage(Func<string, string, string, string, Task> handler)
+        {
+            _hubConnection.On<string, string, string, string>("ReceiveGroupMessage", handler);
+        }
+
+        // ✅ Listen for new group creation notification
+        public void ListenGroupCreated(
+            Func<string, string, string, List<string>, Task> handler)
+        {
+            _hubConnection.On<string, string, string, List<string>>("GroupCreated", handler);
+        }
     }
 }

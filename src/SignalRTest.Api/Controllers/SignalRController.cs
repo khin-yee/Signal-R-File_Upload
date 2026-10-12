@@ -25,18 +25,10 @@ public class SignalRController : ControllerBase
     [HttpPost("/TestSignalR")]
     public IActionResult GetStatus([FromBody]MessageRequest? request)
     {
-        var groupId = Guid.NewGuid().ToString();
-        //_backgroundJob.Enqueue<ISignalRService>(s =>
-        //     s.SendMessage(
-        //         groupId,
-        //         request!.message!,
-        //         request.userid,
-        //         request.sendmode,         
-        //         request.recipientUserid
-        //     ));
-        _service.SendMessage(groupId,request!.message!,request.userid,request.sendmode,request.recipientUserid);
-        var apiresponse = new ApiResponse() { Detail = groupId };
-        return Ok(apiresponse);
+        var groupId = request!.groupId ?? "123";
+        _service.SendMessage(groupId, request.message!, request.userid,
+                             request.sendmode, request.recipientUserid);
+        return Ok(new ApiResponse { Detail = groupId });
     }
 
     [HttpGet("/GetUsers")]
@@ -88,5 +80,29 @@ public class SignalRController : ControllerBase
 
         return Ok(messages);
     }
+
+    [HttpPost("/CreateGroup")]
+    public async Task<IActionResult> CreateGroup([FromBody] CreateGroupRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.GroupName))
+            return BadRequest(new ApiResponse
+            { ErrorCode = "02", ErrorMessage = "Group name is required" });
+        if (!request.Members.Any())
+            return BadRequest(new ApiResponse
+            { ErrorCode = "02", ErrorMessage = "At least one member is required" });
+        var group = await _service.CreateGroup(
+            request.GroupName, request.CreatedBy, request.Members);
+        return Ok(group);
+    }
+    [HttpGet("/GetGroups")]
+    public async Task<IActionResult> GetGroups([FromQuery] string username)
+    {
+        if (string.IsNullOrWhiteSpace(username))
+            return BadRequest(new ApiResponse
+            { ErrorCode = "02", ErrorMessage = "username is required" });
+        var groups = await _service.GetGroups(username);
+        return Ok(groups);
+    }
+
 }
 

@@ -26,21 +26,14 @@ namespace SignalRTest.Repository
         {
             await _collection.InsertOneAsync(message);
         }
-        public async Task<List<ChatMessage>> GetGroupMessagesAsync(
-            string groupId, DateTime? after = null, int limit = 50)
+
+        public async Task<List<ChatMessage>> GetGroupMessagesAsync(string groupId, DateTime? after = null, int limit = 50)
         {
-            var filter = Builders<ChatMessage>.Filter.And(
-                Builders<ChatMessage>.Filter.Eq(m => m.SendMode, "All"),
-                Builders<ChatMessage>.Filter.Eq(m => m.GroupId, groupId)
-            );
-            // Incremental sync — only fetch messages NEWER than last cached
+            // Filter by GroupId — unique per conversation (either "123" or MongoDB ObjectId)
+            var filter = Builders<ChatMessage>.Filter.Eq(m => m.GroupId, groupId);
             if (after.HasValue)
-            {
-                filter = Builders<ChatMessage>.Filter.And(
-                    filter,
-                    Builders<ChatMessage>.Filter.Gt(m => m.SentAt, after.Value)
-                );
-            }
+                filter = Builders<ChatMessage>.Filter.And(filter,
+                    Builders<ChatMessage>.Filter.Gt(m => m.SentAt, after.Value));
             return await _collection
                 .Find(filter)
                 .SortBy(m => m.SentAt)

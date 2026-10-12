@@ -18,6 +18,7 @@
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\SIgnalRTest.Domain\SIgnalRTest.Domain.csproj" />
+		<ProjectReference Include="..\SignalRTest.Repository\SignalRTest.Repository.csproj" />
 	</ItemGroup>
 	
 </Project>

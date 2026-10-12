@@ -43,6 +43,16 @@ public partial class SignalR : ComponentBase, IDisposable
     // ── Logout injections ──
     private System.Threading.Timer? _lastSeenTimer;
 
+    // ── Custom Group state ──────────────────────────────────────
+    public bool ShowCreateGroupDialog { get; set; } = false;
+    public string NewGroupName { get; set; } = "";
+    public HashSet<string> SelectedGroupMembers { get; set; } =
+        new(StringComparer.OrdinalIgnoreCase);
+    public List<Auth0UserResponse> AllUsersForGroupSelect { get; set; } = new();
+    public string? ActiveCustomGroupId { get; set; }   // for the open custom group conv
+    public bool IsCreatingGroup { get; set; } = false;
+    public string? CreateGroupError { get; set; }
+
     [Inject]
     public UtilitiesService? _service { get; set; }
 
@@ -64,7 +74,10 @@ public partial class SignalR : ComponentBase, IDisposable
         await signalRService.JoinGroupAsync("123");
         ListenSignalREvent();
         ListenUserListEvent();
+        ListenGroupMessageEvent();   // ✅ NEW
+        ListenGroupCreatedEvent();   // ✅ NEW
         ListenLastSeenEvent();
+
         await signalRService.RegisterUserAsync(Name);
 
         var groupConv = new ConversationItem
@@ -93,18 +106,58 @@ public partial class SignalR : ComponentBase, IDisposable
         }, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
 
         await LoadAllUsers();
+        await LoadUserGroups();          // ✅ NEW — load user's custom groups
 
-        // ✅ Background check: load unread counts for all direct conversations
-        // Runs after users are loaded so Conversations list is fully populated
         _ = CheckAllUnreadCounts();
 
         await base.OnInitializedAsync();
     }
+    private async Task LoadUserGroups()
+    {
+        var response = await _service!.GetGroups(Name);
+        if (response.ErrorCode != "00" || string.IsNullOrEmpty(response.Detail)) return;
+
+        var groups = JsonConvert.DeserializeObject<List<ChatGroup>>(response.Detail);
+        if (groups == null) return;
+
+        foreach (var group in groups)
+        {
+            // Join the SignalR room so we receive messages
+            await signalRService.JoinCustomGroupAsync(group.Id!);
+
+            // Add to conversation list if not already there
+            if (!Conversations.Any(c => c.CustomGroupId == group.Id))
+            {
+                var conv = BuildGroupConvItem(group);
+                Conversations.Add(conv);
+                ConversationMessages[conv.ContactName] = new List<MessageRequest>();
+            }
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private ConversationItem BuildGroupConvItem(ChatGroup group)
+    {
+        return new ConversationItem
+        {
+            ContactName     = group.GroupName,
+            IsGroup         = true,
+            CustomGroupId   = group.Id,
+            Members         = group.Members,
+            IsOnline        = true,
+            LastMessage     = $"Created by {group.CreatedBy}",
+            AvatarColor     = "#dbeafe",
+            AvatarTextColor = "#1e40af"
+        };
+    }
 
     private string GetCacheKey(ConversationItem conv)
     {
+        if (conv.CustomGroupId != null)
+            return $"chat_customgroup_{conv.CustomGroupId}";   // ✅ NEW
         if (conv.IsGroup)
-            return $"chat_group_123";
+            return "chat_group_123";
         var names = new[] { Name, conv.ContactName }.OrderBy(n => n).ToArray();
         return $"chat_direct_{names[0]}|{names[1]}";
     }
@@ -163,29 +216,45 @@ public partial class SignalR : ComponentBase, IDisposable
     }
 
     private string GetSyncKey(ConversationItem conv) => $"sync_{GetCacheKey(conv)}";
+
     private async Task LoadConversationHistory(ConversationItem conv)
     {
         var cacheKey = GetCacheKey(conv);
         var syncKey = GetSyncKey(conv);
 
-        // ── STEP 1: Load from localStorage immediately (instant render) ──
+        // Step 1: render from localStorage immediately
         var cached = await ReadFromCache(cacheKey);
         if (cached.Count > 0)
         {
             ConversationMessages[conv.ContactName] = cached;
-            await InvokeAsync(StateHasChanged);   // render right away from cache
+            await InvokeAsync(StateHasChanged);
         }
 
-        // ── STEP 2: Incremental sync — fetch only NEW messages from MongoDB ──
-        // Use last sync time so we only download messages we don't have yet
+        // Step 2: incremental sync from MongoDB
         var lastSync = await ReadLastSync(syncKey);
 
-        var response = await _service!.GetMessages(
-            currentUserId: Name,
-            sendMode: conv.IsGroup ? "All" : "Direct",
-            contactId: conv.IsGroup ? null : conv.ContactName,
-            after: lastSync   // null = first visit → fetch last 50
-        );
+        // ✅ Determine sendMode and groupId for API call
+        string apiSendMode;
+        string? apiContactId = null;
+        string apiGroupId = "123";
+
+        if (conv.CustomGroupId != null)
+        {
+            apiSendMode = "Group";
+            apiGroupId  = conv.CustomGroupId;
+        }
+        else if (conv.IsGroup)
+        {
+            apiSendMode = "All";
+            apiGroupId  = "123";
+        }
+        else
+        {
+            apiSendMode  = "Direct";
+            apiContactId = conv.ContactName;
+        }
+
+        var response = await _service!.GetMessages(Name, apiSendMode, apiContactId, apiGroupId, lastSync);
 
         if (response.ErrorCode == "00" && !string.IsNullOrEmpty(response.Detail))
         {
@@ -194,22 +263,19 @@ public partial class SignalR : ComponentBase, IDisposable
 
             if (newMessages.Count > 0)
             {
-                // Map ChatMessage → MessageRequest for the UI
                 var mapped = newMessages.Select(m => new MessageRequest
                 {
                     message         = m.Message,
                     userid          = m.SenderId == Name ? "You" : m.SenderId,
                     sendtime        = m.SentAtDisplay,
                     sendmode        = m.SendMode,
-                    recipientUserid = m.RecipientId
+                    recipientUserid = m.RecipientId,
+                    groupId         = m.GroupId
                 }).ToList();
 
-                // Merge: cached (older) + new (newer), no duplicates by position
                 var merged = cached.Concat(mapped).ToList();
-
                 ConversationMessages[conv.ContactName] = merged;
 
-                // Update sidebar preview
                 var last = merged.LastOrDefault();
                 if (last != null)
                 {
@@ -217,28 +283,19 @@ public partial class SignalR : ComponentBase, IDisposable
                     conv.LastMessageTime = last.sendtime ?? "";
                 }
 
-                // ✅ FIX: Count messages from others as unread
-                // when this conversation is NOT the one currently open
                 if (ActiveConversation?.ContactName != conv.ContactName)
                 {
                     var newUnread = mapped.Count(m => m.userid != "You");
-                    if (newUnread > 0)
-                        conv.UnreadCount += newUnread;
+                    if (newUnread > 0) conv.UnreadCount += newUnread;
                 }
 
-                // Save merged list back to localStorage
                 await WriteToCache(cacheKey, merged);
-
                 await InvokeAsync(StateHasChanged);
             }
         }
 
-        // Save sync timestamp so next visit only fetches messages newer than now
         await WriteLastSync(syncKey, DateTime.UtcNow);
     }
-    // ✅ NEW: Background check — runs after users load
-    // Calls LoadConversationHistory for every non-active conversation
-    // so unread counts are correct when user first opens the app
     private async Task CheckAllUnreadCounts()
     {
         foreach (var conv in Conversations.Where(c => c != ActiveConversation).ToList())
@@ -249,25 +306,34 @@ public partial class SignalR : ComponentBase, IDisposable
 
     public async void SelectConversation(ConversationItem conv)
     {
-        ActiveConversation  = conv;
-        conv.UnreadCount    = 0;
+        ActiveConversation = conv;
+        conv.UnreadCount   = 0;
         SearchResults.Clear();
         SearchQuery = "";
 
-        if (conv.IsGroup)
+        if (conv.CustomGroupId != null)
         {
-            SendMode        = "All";
-            RecipientUserId = null;
+            // ✅ Custom group
+            SendMode          = "Group";
+            ActiveCustomGroupId = conv.CustomGroupId;
+            RecipientUserId   = null;
+        }
+        else if (conv.IsGroup)
+        {
+            // Global "Group Chat"
+            SendMode          = "All";
+            ActiveCustomGroupId = null;
+            RecipientUserId   = null;
         }
         else
         {
-            SendMode        = "Direct";
-            RecipientUserId = conv.ContactName;
+            // Direct
+            SendMode          = "Direct";
+            ActiveCustomGroupId = null;
+            RecipientUserId   = conv.ContactName;
         }
 
         StateHasChanged();
-
-        // ✅ Load from cache first, then sync new messages from MongoDB
         await LoadConversationHistory(conv);
     }
     private void ListenSignalREvent()
@@ -440,7 +506,8 @@ public partial class SignalR : ComponentBase, IDisposable
     {
         if (string.IsNullOrWhiteSpace(message) || ActiveConversation == null)
             return new ApiResponse();
-        // Validate recipient still exists in Auth0 for direct messages
+
+        // Validate recipient for direct messages
         if (!ActiveConversation.IsGroup)
         {
             var validation = await _service!.ValidateUser(ActiveConversation.ContactName);
@@ -452,30 +519,29 @@ public partial class SignalR : ComponentBase, IDisposable
                 return new ApiResponse { ErrorCode = "04", ErrorMessage = "User not found" };
             }
         }
-        var response = await _service!.CallApi(
-            message!,
-            Name,
-            SendMode,
-            IsDirectMode ? RecipientUserId : null
-        );
-        // Add sent message locally
+
+        var response = await _service!.CallApi(message!,Name,SendMode,IsDirectMode ? RecipientUserId : null,ActiveConversation.CustomGroupId );
+
         var sentMsg = new MessageRequest
         {
             message         = message,
             sendtime        = DateTime.Now.ToShortTimeString(),
             userid          = "You",
             recipientUserid = IsDirectMode ? RecipientUserId : null,
-            sendmode        = SendMode
+            sendmode        = SendMode,
+            groupId         = ActiveConversation.CustomGroupId
         };
+
         var key = ActiveConversation.ContactName;
         if (!ConversationMessages.ContainsKey(key))
             ConversationMessages[key] = new();
         ConversationMessages[key].Add(sentMsg);
+
         ActiveConversation.LastMessage     = message;
         ActiveConversation.LastMessageTime = sentMsg.sendtime;
         message = "";
-        var cacheKey = GetCacheKey(ActiveConversation);
-        await WriteToCache(cacheKey, ConversationMessages[key]);
+
+        await WriteToCache(GetCacheKey(ActiveConversation), ConversationMessages[key]);
         await InvokeAsync(StateHasChanged);
         return response;
     }
@@ -531,6 +597,9 @@ public partial class SignalR : ComponentBase, IDisposable
                         ConversationMessages[displayName] = new List<MessageRequest>();
                     }
                 }
+                AllUsersForGroupSelect = users
+    .Where(u => !u.DisplayName.Equals(Name, StringComparison.OrdinalIgnoreCase))
+    .ToList();
                 await InvokeAsync(StateHasChanged);
             }
         }
@@ -565,6 +634,127 @@ public partial class SignalR : ComponentBase, IDisposable
 
             Navigation.NavigateTo("/", forceLoad: true);
         }
+    }
+
+    private void ListenGroupMessageEvent()
+    {
+        signalRService.ListenGroupMessage(async (msg, userid, sendtime, groupId) =>
+        {
+            if (userid == Name) return;
+
+            // Find the custom group conversation
+            var conv = Conversations.FirstOrDefault(c => c.CustomGroupId == groupId);
+            if (conv == null) return;
+
+            var incoming = new MessageRequest
+            {
+                message  = msg,
+                userid   = userid,
+                sendtime = sendtime,
+                sendmode = "Group",
+                groupId  = groupId
+            };
+
+            if (!ConversationMessages.ContainsKey(conv.ContactName))
+                ConversationMessages[conv.ContactName] = new();
+            ConversationMessages[conv.ContactName].Add(incoming);
+
+            conv.LastMessage     = $"{userid}: {msg}";
+            conv.LastMessageTime = sendtime;
+
+            if (ActiveConversation?.CustomGroupId != groupId)
+                conv.UnreadCount++;
+
+            // Update localStorage cache
+            await WriteToCache(GetCacheKey(conv), ConversationMessages[conv.ContactName]);
+
+            await InvokeAsync(StateHasChanged);
+        });
+    }
+
+    private void ListenGroupCreatedEvent()
+    {
+        signalRService.ListenGroupCreated(async (groupId, groupName, createdBy, members) =>
+        {
+            // Avoid duplicates (creator already added it locally)
+            if (Conversations.Any(c => c.CustomGroupId == groupId)) return;
+
+            // Join the SignalR group room
+            await signalRService.JoinCustomGroupAsync(groupId);
+
+            var group = new ChatGroup
+            {
+                Id        = groupId,
+                GroupName = groupName,
+                CreatedBy = createdBy,
+                Members   = members
+            };
+            var conv = BuildGroupConvItem(group);
+            Conversations.Add(conv);
+            ConversationMessages[conv.ContactName] = new List<MessageRequest>();
+
+            // Show notification
+            Snackbar.Add($"You were added to group \"{groupName}\"", Severity.Info);
+
+            await InvokeAsync(StateHasChanged);
+        });
+    }
+
+    public async Task CreateGroupAsync()
+    {
+        if (string.IsNullOrWhiteSpace(NewGroupName))
+        {
+            CreateGroupError = "Please enter a group name.";
+            return;
+        }
+        if (!SelectedGroupMembers.Any())
+        {
+            CreateGroupError = "Please select at least one member.";
+            return;
+        }
+
+        IsCreatingGroup = true;
+        CreateGroupError = null;
+        await InvokeAsync(StateHasChanged);
+
+        var members = SelectedGroupMembers.ToList();
+        var response = await _service!.CreateGroup(NewGroupName, Name, members);
+
+        if (response.ErrorCode == "00" && !string.IsNullOrEmpty(response.Detail))
+        {
+            var created = JsonConvert.DeserializeObject<ChatGroup>(response.Detail);
+            if (created != null)
+            {
+                // Join the SignalR room (creator needs to join too)
+                await signalRService.JoinCustomGroupAsync(created.Id!);
+
+                var conv = BuildGroupConvItem(created);
+                Conversations.Add(conv);
+                ConversationMessages[conv.ContactName] = new List<MessageRequest>();
+
+                // Close dialog and reset
+                ShowCreateGroupDialog = false;
+                NewGroupName          = "";
+                SelectedGroupMembers.Clear();
+
+                // Switch to the new group
+                SelectConversation(conv);
+            }
+        }
+        else
+        {
+            CreateGroupError = "Failed to create group. Please try again.";
+        }
+
+        IsCreatingGroup = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void ToggleMember(string username)
+    {
+        if (!SelectedGroupMembers.Remove(username))
+            SelectedGroupMembers.Add(username);
+        StateHasChanged();
     }
 }
 

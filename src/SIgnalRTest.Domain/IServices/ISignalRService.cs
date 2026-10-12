@@ -16,5 +16,7 @@ namespace SIgnalRTest.Domain.IServices
         Task<List<Auth0UserResponse>> GetAuth0Users(string? searchQuery = null);
         Task<Auth0UserResponse?> ValidateAuth0User(string usernameOrEmail);
         Task<List<ChatMessage>> GetMessages(string currentUserId,string sendMode,string? contactId = null,string groupId = "123",DateTime? after = null);
+        Task<ChatGroup> CreateGroup(string groupName, string createdBy,List<string> members);
+        Task<List<ChatGroup>> GetGroups(string username);
     }
 }

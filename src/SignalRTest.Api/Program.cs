@@ -63,6 +63,7 @@ builder.Services.AddHangfireServer(options =>
 builder.Services.AddSwaggerGen();
 builder.Services.AddSignalR();
 builder.Services.AddScoped<ISignalRService, SignalRService>();
+builder.Services.AddRepoService();
 builder.Services.AddScoped<SignalRHub>();
 builder.Services.AddHttpClient();
 var app = builder.Build();

@@ -19,17 +19,20 @@ public class SignalRService:ISignalRService
 {
     private readonly IConfiguration _configuration;
 
+    private readonly IGroupRepository _groupRepository;
+
     public readonly SignalRHub _signalR;
 
     private readonly IHttpClientFactory _httpClientFactory;
 
     private readonly IMessageRepository _messageRepository;
-    public SignalRService (SignalRHub signalR,IConfiguration configuration, IHttpClientFactory httpClientFactory, IMessageRepository messageRepo)
+    public SignalRService (SignalRHub signalR,IConfiguration configuration, IHttpClientFactory httpClientFactory, IMessageRepository messageRepo, IGroupRepository groupRepository)
     {
         _signalR = signalR;
         _configuration = configuration;
         _httpClientFactory = httpClientFactory;
         _messageRepository = messageRepo;
+        _groupRepository = groupRepository;
     }
     public ApiResponse MessageCreate(string groupId)
     {
@@ -52,6 +55,8 @@ public class SignalRService:ISignalRService
         {
             await _signalR.SendToUser(recipientUserId, "ReceiveMessage", message, userid);
         }
+        else if (sendMode == "Group" && !string.IsNullOrEmpty(groupId))
+            await _signalR.SendGroupMessage(groupId, message, userid);
         else
         {
             await _signalR.SendSignalR("123", "ReceiveMessage", message, userid);
@@ -107,13 +112,41 @@ public class SignalRService:ISignalRService
     }
     public async Task<List<ChatMessage>> GetMessages(string currentUserId, string sendMode,string? contactId = null, string groupId = "123",DateTime? after = null)
     {
-        if (sendMode == "All")
+        if (sendMode == "All" || sendMode == "Group")
             return await _messageRepository.GetGroupMessagesAsync(groupId, after);
-
         if (!string.IsNullOrEmpty(contactId))
-            return await _messageRepository.GetDirectMessagesAsync(currentUserId, contactId, after);
-
+            return await _messageRepository.GetDirectMessagesAsync(
+                currentUserId, contactId, after);
         return new List<ChatMessage>();
     }
+
+    public async Task<ChatGroup> CreateGroup(string groupName, string createdBy,List<string> members)
+    {
+        // Always include the creator in the group
+        if (!members.Contains(createdBy, StringComparer.OrdinalIgnoreCase))
+            members.Insert(0, createdBy);
+
+        var group = new ChatGroup
+        {
+            GroupName = groupName,
+            CreatedBy = createdBy,
+            Members   = members,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var created = await _groupRepository.CreateAsync(group);
+
+        // Notify all ONLINE members via SignalR
+        await _signalR.NotifyGroupCreated(
+            created.Id!, groupName, createdBy, members);
+
+        return created;
+    }
+
+    public async Task<List<ChatGroup>> GetGroups(string username)
+    {
+        return await _groupRepository.GetByMemberAsync(username);
+    }
+
 }
 

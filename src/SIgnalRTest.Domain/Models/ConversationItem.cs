@@ -19,5 +19,7 @@ namespace SIgnalRTest.Domain.Models
         public string AvatarColor { get; set; } = "#ede9fe"; // bg colour
         public string AvatarTextColor { get; set; } = "#4f46e5";
         public DateTime? LastSeen { get; set; } = null;
+        public string? CustomGroupId { get; set; } = null;
+        public List<string> Members { get; set; } = new();
     }
 }
