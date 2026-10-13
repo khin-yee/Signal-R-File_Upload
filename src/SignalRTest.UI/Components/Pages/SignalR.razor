@@ -296,6 +296,7 @@
     </div>
     @if (ShowCreateGroupDialog)
     {
+      
         <div class="cr-overlay" @onclick="() => { ShowCreateGroupDialog = false; StateHasChanged(); }">
             <div class="cr-group-dialog" @onclick:stopPropagation="true">
                 <div class="cr-dialog-header">
@@ -305,44 +306,49 @@
                         ✕
                     </button>
                 </div>
-                <!-- Group name -->
-                <div class="cr-dialog-field">
-                    <label class="cr-dialog-label">Group Name</label>
-                    <input class="cr-dialog-input"
-                           placeholder="Enter group name..."
-                           @bind="NewGroupName"
-                           @bind:event="oninput" />
-                </div>
-                <!-- Member selection -->
-                <div class="cr-dialog-field">
-                    <label class="cr-dialog-label">
-                        Add Members (@SelectedGroupMembers.Count selected)
-                    </label>
-                    <div class="cr-member-list">
-                        @foreach (var user in AllUsersForGroupSelect)
-                        {
-                            var uname = user.DisplayName;
-                            var isSelected = SelectedGroupMembers.Contains(uname);
-                            <div class="cr-member-row @(isSelected ? "cr-member-selected" : "")"
-                                 @onclick="() => ToggleMember(uname)">
-                                <div class="cr-member-avatar"
-                                     style="background:@GetAvatarColor(uname); color:@GetAvatarTextColor(uname);">
-                                    @uname.Substring(0, 1).ToUpper()
-                                </div>
-                                <span class="cr-member-name">@uname</span>
-                                @if (isSelected)
-                                {
-                                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
-                                             Style="color:#4f46e5; margin-left:auto;" />
-                                }
-                            </div>
-                        }
+                <!-- Group name + Member selection + Error — all inside scrollable body -->
+                <div class="cr-dialog-body">
+                    <!-- Group name -->
+                    <div class="cr-dialog-field">
+                        <label class="cr-dialog-label">Group Name</label>
+                        <input class="cr-dialog-input"
+                               placeholder="Enter group name..."
+                               @bind="NewGroupName"
+                               @bind:event="oninput" />
                     </div>
+                    @if (!string.IsNullOrEmpty(CreateGroupError))
+                    {
+                        <div class="cr-dialog-error">@CreateGroupError</div>
+                    }
+                    <!-- Member selection -->
+                    <div class="cr-dialog-field">
+                        <label class="cr-dialog-label">
+                            Add Members (@SelectedGroupMembers.Count selected)
+                        </label>
+                        <div class="cr-member-list">
+                            @foreach (var user in AllUsersForGroupSelect)
+                            {
+                                var uname = user.Name;
+                                var isSelected = SelectedGroupMembers.Contains(uname);
+                                <div class="cr-member-row @(isSelected ? "cr-member-selected" : "")"
+                                     @onclick="() => ToggleMember(uname)">
+                                    <div class="cr-member-avatar"
+                                         style="background:@GetAvatarColor(uname); color:@GetAvatarTextColor(uname);">
+                                        @uname.Substring(0, 1).ToUpper()
+                                    </div>
+                                    <span class="cr-member-name">@uname</span>
+                                    @if (isSelected)
+                                    {
+                                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
+                                                 Style="color:#4f46e5; margin-left:auto;" />
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                  
                 </div>
-                @if (!string.IsNullOrEmpty(CreateGroupError))
-                {
-                    <div class="cr-dialog-error">@CreateGroupError</div>
-                }
+                <!-- Actions pinned at the bottom — outside the scrollable body -->
                 <div class="cr-dialog-actions">
                     <button class="cr-dialog-cancel"
                             @onclick="() => { ShowCreateGroupDialog = false; StateHasChanged(); }">
@@ -356,6 +362,7 @@
             </div>
         </div>
     }
+
 </div>
 
 <style>
@@ -431,6 +438,14 @@
         color: #9ca3af;
         cursor: pointer;
         padding: 4px;
+    }
+
+    /* ✅ Scrollable middle section — grows to fill space, scrolls when content overflows */
+    .cr-dialog-body {
+        flex: 1;
+        min-height: 0;       /* required: flex children won't scroll without this */
+        overflow-y: auto;
+        padding-bottom: 8px;
     }
 
     .cr-dialog-field {
@@ -510,7 +525,7 @@
         gap: 10px;
         padding: 16px 20px;
         border-top: 1px solid #f3f4f6;
-        margin-top: 12px;
+        flex-shrink: 0;  /* ✅ never shrink — always pinned at bottom */
     }
 
     .cr-dialog-cancel {

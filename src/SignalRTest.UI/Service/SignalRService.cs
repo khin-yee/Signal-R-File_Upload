@@ -51,7 +51,6 @@ namespace SignalRTest.UI.Service
         {
             await _hubConnection.InvokeAsync("RegisterUser", username);
         }
-
         public async Task UnregisterUserAsync(string username)
         {
             await _hubConnection.InvokeAsync("UnregisterUser", username);
