@@ -29,7 +29,7 @@ public class SignalRHub : Hub
 
     public static IEnumerable<string> GetOnlineUsers() => _userConnections.Keys;
     public async Task SendToUser(string recipientUsername, string method, string message, string senderUserId)
-    {
+    {      
         if (_userConnections.TryGetValue(recipientUsername, out var connectionId))
         {
             // Found the connection — send only to them
@@ -111,6 +111,23 @@ public class SignalRHub : Hub
                 // Notify them of the new group
                 await _singnalRhub.Clients.Client(connId)
                     .SendAsync("GroupCreated", groupId, groupName, createdBy, members);
+            }
+        }
+    }
+
+    public async Task NotifyGroupUpdated(string groupId, string groupName,List<string> allMembers, List<string> newMembers)
+    {
+        await _singnalRhub.Clients.Group(groupId)
+            .SendAsync("GroupUpdated", groupId, groupName, allMembers);
+
+        // For brand-new members: add to SignalR room + notify their sidebar
+        foreach (var member in newMembers)
+        {
+            if (_userConnections.TryGetValue(member, out var connId))
+            {
+                await _singnalRhub.Groups.AddToGroupAsync(connId, groupId);
+                await _singnalRhub.Clients.Client(connId)
+                    .SendAsync("GroupCreated", groupId, groupName, "admin", allMembers);
             }
         }
     }

@@ -18,5 +18,6 @@ namespace SIgnalRTest.Domain.IServices
         Task<List<ChatMessage>> GetMessages(string currentUserId,string sendMode,string? contactId = null,string groupId = "123",DateTime? after = null);
         Task<ChatGroup> CreateGroup(string groupName, string createdBy,List<string> members);
         Task<List<ChatGroup>> GetGroups(string username);
+        Task<ChatGroup?> UpdateGroup(string groupId, string requestedBy,string? newName, List<string> membersToAdd);
     }
 }

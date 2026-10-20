@@ -12,5 +12,9 @@ namespace SIgnalRTest.Domain.IServices
         Task<ChatGroup> CreateAsync(ChatGroup group);
         Task<List<ChatGroup>> GetByMemberAsync(string username);
         Task<ChatGroup?> GetByIdAsync(string groupId);
+        Task UpdateNameAsync(string groupId, string newName);
+        Task<ChatGroup?> AddMembersAsync(string groupId, List<string> newMembers);
+
+
     }
 }

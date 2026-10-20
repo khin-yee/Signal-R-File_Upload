@@ -142,7 +142,7 @@
                     </div>
                 }
 
-              </div>
+            </div>
 
         </aside>
 
@@ -198,6 +198,14 @@
                         }
                     </div>
                     <div class="cr-chat-header-right">
+                        @if (ActiveConversation?.CustomGroupId != null)
+                        {
+                            <button class="cr-group-settings-btn" @onclick="OpenGroupSettings"
+                                    title="Group Settings">
+                                <MudIcon Icon="@Icons.Material.Outlined.Settings"
+                                         Style="font-size:1.1rem;" />
+                            </button>
+                        }
                         <span class="cr-online-pill">
                             <span class="cr-pulse-dot"></span> Live
                         </span>
@@ -296,7 +304,7 @@
     </div>
     @if (ShowCreateGroupDialog)
     {
-      
+
         <div class="cr-overlay" @onclick="() => { ShowCreateGroupDialog = false; StateHasChanged(); }">
             <div class="cr-group-dialog" @onclick:stopPropagation="true">
                 <div class="cr-dialog-header">
@@ -346,7 +354,7 @@
                             }
                         </div>
                     </div>
-                  
+
                 </div>
                 <!-- Actions pinned at the bottom — outside the scrollable body -->
                 <div class="cr-dialog-actions">
@@ -363,6 +371,142 @@
         </div>
     }
 
+
+    @if (ShowGroupSettings && ActiveConversation?.CustomGroupId != null)
+    {
+
+        <div class="cr-overlay"
+             @onclick="() => { ShowGroupSettings = false; StateHasChanged(); }">
+
+            <div class="cr-group-dialog" @onclick:stopPropagation="true">
+
+                <div class="cr-dialog-header">
+                    <span class="cr-dialog-title">Group Settings</span>
+                    <button class="cr-dialog-close"
+                            @onclick="() => { ShowGroupSettings = false; StateHasChanged(); }">
+                        ✕
+                    </button>
+                </div>
+
+                <div class="cr-dialog-body">
+
+                    @if (!string.IsNullOrEmpty(UpdateGroupError))
+                    {
+                        <div class="cr-dialog-error">@UpdateGroupError</div>
+                    }
+                    @if (!string.IsNullOrEmpty(UpdateGroupSuccess))
+                    {
+                        <div class="cr-dialog-success">@UpdateGroupSuccess</div>
+                    }
+                    <!-- Group Name -->
+                    <div class="cr-dialog-field">
+                        <label class="cr-dialog-label">Group Name</label>
+                        @if (IsGroupAdmin)
+                        {
+                            <input class="cr-dialog-input"
+                                   @bind="EditGroupName"
+                                   @bind:event="oninput"
+                                   placeholder="Enter group name..." />
+                        }
+                        else
+                        {
+                            <div class="cr-settings-readonly">
+                                @ActiveConversation.ContactName
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Current Members -->
+                    <div class="cr-dialog-field">
+                        <label class="cr-dialog-label">
+                            Members (@ActiveConversation.Members.Count)
+                        </label>
+                        <div class="cr-member-list">
+                            @foreach (var member in ActiveConversation.Members)
+                            {
+                                <div class="cr-member-row">
+                                    <div class="cr-member-avatar"
+                                         style="background:@GetAvatarColor(member);
+                                            color:@GetAvatarTextColor(member);">
+                                        @member.Substring(0, 1).ToUpper()
+                                    </div>
+                                    <span class="cr-member-name">@member</span>
+                                    @if (member.Equals(ActiveConversation.CreatedBy,
+                                   StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <span class="cr-admin-badge">Admin</span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Add New Members (admin only, shows non-members) -->
+                    @if (IsGroupAdmin)
+                    {
+                        var nonMembers = AllUsersForGroupSelect
+                        .Where(u => !ActiveConversation.Members
+                        .Contains(u.DisplayName, StringComparer.OrdinalIgnoreCase))
+                        .ToList();
+
+                        @if (nonMembers.Any())
+                        {
+                            <div class="cr-dialog-field">
+                                <label class="cr-dialog-label">
+                                    Add Members (@MembersToAdd.Count selected)
+                                </label>
+                                <div class="cr-member-list">
+                                    @foreach (var user in nonMembers)
+                                    {
+                                        var uname = user.DisplayName;
+                                        var isSelected = MembersToAdd.Contains(uname);
+                                        <div class="cr-member-row @(isSelected ? "cr-member-selected" : "")"
+                                             @onclick="() => ToggleAddMember(uname)">
+                                            <div class="cr-member-avatar"
+                                                 style="background:@GetAvatarColor(uname);
+                                                    color:@GetAvatarTextColor(uname);">
+                                                @uname.Substring(0, 1).ToUpper()
+                                            </div>
+                                            <span class="cr-member-name">@uname</span>
+                                            @if (isSelected)
+                                            {
+                                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
+                                                         Style="color:#4f46e5; margin-left:auto;" />
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="cr-dialog-field">
+                                <div class="cr-settings-readonly" style="color:#9ca3af;font-size:0.85rem;">
+                                    All users are already members of this group
+                                </div>
+                            </div>
+                        }
+                    }
+
+                </div>
+
+                <div class="cr-dialog-actions">
+                    <button class="cr-dialog-cancel"
+                            @onclick="() => { ShowGroupSettings = false; StateHasChanged(); }">
+                        Close
+                    </button>
+                    @if (IsGroupAdmin)
+                    {
+                        <button class="cr-dialog-create" @onclick="SaveGroupChanges"
+                                disabled="@IsUpdatingGroup">
+                            @(IsUpdatingGroup ? "Saving..." : "Save Changes")
+                        </button>
+                    }
+                </div>
+
+            </div>
+        </div>
+    }
 </div>
 
 <style>
@@ -372,6 +516,59 @@
         height: 100%;
         overflow: hidden;
     }
+
+    /* Settings button in chat header */
+    .cr-group-settings-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        border: none;
+        border-radius: 8px;
+        background: transparent;
+        color: #6b7280;
+        cursor: pointer;
+        transition: background 0.15s, color 0.15s;
+        margin-right: 6px;
+    }
+
+        .cr-group-settings-btn:hover {
+            background: #f3f4f6;
+            color: #4f46e5;
+        }
+
+    /* Read-only display for non-admin */
+    .cr-settings-readonly {
+        padding: 9px 12px;
+        background: #f9fafb;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        color: #374151;
+    }
+
+    /* Admin badge next to member name */
+    .cr-admin-badge {
+        margin-left: auto;
+        padding: 2px 8px;
+        background: #ede9fe;
+        color: #4f46e5;
+        border-radius: 20px;
+        font-size: 0.72rem;
+        font-weight: 600;
+    }
+
+    /* Success message */
+    .cr-dialog-success {
+        margin: 8px 20px 0;
+        padding: 8px 12px;
+        background: #f0fdf4;
+        border-radius: 6px;
+        color: #16a34a;
+        font-size: 0.82rem;
+    }
+
     /* New Group button */
     .cr-new-group-btn {
         display: flex;
@@ -443,7 +640,7 @@
     /* ✅ Scrollable middle section — grows to fill space, scrolls when content overflows */
     .cr-dialog-body {
         flex: 1;
-        min-height: 0;       /* required: flex children won't scroll without this */
+        min-height: 0; /* required: flex children won't scroll without this */
         overflow-y: auto;
         padding-bottom: 8px;
     }
@@ -525,7 +722,7 @@
         gap: 10px;
         padding: 16px 20px;
         border-top: 1px solid #f3f4f6;
-        flex-shrink: 0;  /* ✅ never shrink — always pinned at bottom */
+        flex-shrink: 0; /* ✅ never shrink — always pinned at bottom */
     }
 
     .cr-dialog-cancel {
@@ -564,6 +761,7 @@
         color: #dc2626;
         font-size: 0.82rem;
     }
+
     .cr-logout-btn {
         display: flex;
         align-items: center;
@@ -589,11 +787,13 @@
         font-size: 0.75rem;
         color: #9ca3af;
     }
-        .cr-logout-btn:hover {
-            background: #fef2f2;
-            border-color: #fca5a5;
-            color: #dc2626;
-        }
+
+    .cr-logout-btn:hover {
+        background: #fef2f2;
+        border-color: #fca5a5;
+        color: #dc2626;
+    }
+
     .page, main, .page > main, .page > main > div {
         height: 100% !important;
         padding: 0 !important;

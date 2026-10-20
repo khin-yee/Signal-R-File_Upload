@@ -19,5 +19,6 @@ namespace SignalRTest.Service
             service.AddScoped<IGroupRepository, GroupRepository>();
             return service;
         }
+        
     }
 }

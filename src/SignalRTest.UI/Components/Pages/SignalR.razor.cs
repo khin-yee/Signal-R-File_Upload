@@ -53,6 +53,19 @@ public partial class SignalR : ComponentBase, IDisposable
     public bool IsCreatingGroup { get; set; } = false;
     public string? CreateGroupError { get; set; }
 
+    // ── Group Settings state ────────────────────────────────────
+    public bool ShowGroupSettings { get; set; } = false;
+    public string EditGroupName { get; set; } = "";
+    public HashSet<string> MembersToAdd { get; set; } =
+        new(StringComparer.OrdinalIgnoreCase);
+    public bool IsUpdatingGroup { get; set; } = false;
+    public string? UpdateGroupError { get; set; }
+    public string? UpdateGroupSuccess { get; set; }
+
+    public bool IsGroupAdmin =>
+        ActiveConversation?.CustomGroupId != null &&
+        Name.Equals(ActiveConversation.CreatedBy, StringComparison.OrdinalIgnoreCase);
+
     [Inject]
     public UtilitiesService? _service { get; set; }
 
@@ -77,6 +90,7 @@ public partial class SignalR : ComponentBase, IDisposable
         ListenGroupMessageEvent();   // ✅ NEW
         ListenGroupCreatedEvent();   // ✅ NEW
         ListenLastSeenEvent();
+        ListenGroupUpdatedEvent();   // ✅ NEW
 
         await signalRService.RegisterUserAsync(Name);
 
@@ -136,7 +150,23 @@ public partial class SignalR : ComponentBase, IDisposable
 
         await InvokeAsync(StateHasChanged);
     }
+    private void ListenGroupUpdatedEvent()
+    {
+        signalRService.ListenGroupUpdated(async (groupId, newName, allMembers) =>
+        {
+            var conv = Conversations.FirstOrDefault(c => c.CustomGroupId == groupId);
+            if (conv == null) return;
 
+            conv.ContactName = newName;
+            conv.Members     = allMembers;
+
+            // Keep settings panel in sync if it's open
+            if (ActiveConversation?.CustomGroupId == groupId)
+                EditGroupName = newName;
+
+            await InvokeAsync(StateHasChanged);
+        });
+    }
     private ConversationItem BuildGroupConvItem(ChatGroup group)
     {
         return new ConversationItem
@@ -148,7 +178,8 @@ public partial class SignalR : ComponentBase, IDisposable
             IsOnline        = true,
             LastMessage     = $"Created by {group.CreatedBy}",
             AvatarColor     = "#dbeafe",
-            AvatarTextColor = "#1e40af"
+            AvatarTextColor = "#1e40af",
+            CreatedBy       = group.CreatedBy
         };
     }
 
@@ -219,8 +250,8 @@ public partial class SignalR : ComponentBase, IDisposable
 
     private async Task LoadConversationHistory(ConversationItem conv)
     {
-        var cacheKey = GetCacheKey(conv);
-        var syncKey = GetSyncKey(conv);
+        var cacheKey = GetCacheKey(conv);  
+        var syncKey  = GetSyncKey(conv) ;  
 
         // Step 1: render from localStorage immediately
         var cached = await ReadFromCache(cacheKey);
@@ -754,6 +785,74 @@ public partial class SignalR : ComponentBase, IDisposable
     {
         if (!SelectedGroupMembers.Remove(username))
             SelectedGroupMembers.Add(username);
+        StateHasChanged();
+    }
+
+    public void OpenGroupSettings()
+    {
+        if (ActiveConversation?.CustomGroupId == null) return;
+        EditGroupName      = ActiveConversation.ContactName;
+        MembersToAdd.Clear();
+        UpdateGroupError   = null;
+        UpdateGroupSuccess = null;
+        ShowGroupSettings  = true;
+        StateHasChanged();
+    }
+
+    public async Task SaveGroupChanges()
+    {
+        if (ActiveConversation?.CustomGroupId == null) return;
+
+        var nameChanged = !string.IsNullOrWhiteSpace(EditGroupName) &&
+            !EditGroupName.Equals(ActiveConversation.ContactName,
+                StringComparison.OrdinalIgnoreCase);
+
+        if (!nameChanged && !MembersToAdd.Any())
+        {
+            UpdateGroupError = "No changes to save.";
+            return;
+        }
+
+        IsUpdatingGroup    = true;
+        UpdateGroupError   = null;
+        UpdateGroupSuccess = null;
+        await InvokeAsync(StateHasChanged);
+
+        var response = await _service!.UpdateGroup(
+            ActiveConversation.CustomGroupId,
+            Name,
+            nameChanged ? EditGroupName : null,
+            MembersToAdd.ToList()
+        );
+
+        if (response.ErrorCode == "00" && !string.IsNullOrEmpty(response.Detail))
+        {
+            var updated = JsonConvert.DeserializeObject<ChatGroup>(response.Detail);
+            if (updated != null)
+            {
+                ActiveConversation.ContactName = updated.GroupName;
+                ActiveConversation.Members     = updated.Members;
+                MembersToAdd.Clear();
+                UpdateGroupSuccess = "Group updated successfully!";
+            }
+        }
+        else if (response.ErrorCode == "03")
+        {
+            UpdateGroupError = "Only the group admin can make changes.";
+        }
+        else
+        {
+            UpdateGroupError = "Failed to update group. Please try again.";
+        }
+
+        IsUpdatingGroup = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void ToggleAddMember(string username)
+    {
+        if (!MembersToAdd.Remove(username))
+            MembersToAdd.Add(username);
         StateHasChanged();
     }
 }

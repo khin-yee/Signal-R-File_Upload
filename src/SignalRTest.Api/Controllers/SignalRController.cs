@@ -94,6 +94,7 @@ public class SignalRController : ControllerBase
             request.GroupName, request.CreatedBy, request.Members);
         return Ok(group);
     }
+
     [HttpGet("/GetGroups")]
     public async Task<IActionResult> GetGroups([FromQuery] string username)
     {
@@ -103,6 +104,18 @@ public class SignalRController : ControllerBase
         var groups = await _service.GetGroups(username);
         return Ok(groups);
     }
+
+    [HttpPut("/UpdateGroup")]
+    public async Task<IActionResult> UpdateGroup([FromBody] UpdateGroupRequest request)
+    {
+        if (string.IsNullOrEmpty(request.GroupId))
+            return BadRequest(new ApiResponse { ErrorCode= "02",ErrorMessage = "ID required!"});
+        var result = await _service.UpdateGroup(request.GroupId, request.RequestedBy, request.NewName, request.MembersToAdd);
+        if (result ==null)
+            return StatusCode(403, new ApiResponse { ErrorCode = "03", ErrorMessage = "only group admin can update" });
+        return Ok(result);
+    }
+
 
 }
 

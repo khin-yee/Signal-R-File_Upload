@@ -26,31 +26,24 @@ namespace SignalRTest.Repository
         {
             await _collection.InsertOneAsync(message);
         }
-
+ 
         public async Task<List<ChatMessage>> GetGroupMessagesAsync(string groupId, DateTime? after = null, int limit = 50)
         {
             // Filter by GroupId — unique per conversation (either "123" or MongoDB ObjectId)
             var filter = Builders<ChatMessage>.Filter.Eq(m => m.GroupId, groupId);
             if (after.HasValue)
-                filter = Builders<ChatMessage>.Filter.And(filter,
-                    Builders<ChatMessage>.Filter.Gt(m => m.SentAt, after.Value));
-            return await _collection
-                .Find(filter)
-                .SortBy(m => m.SentAt)
-                .Limit(limit)
-                .ToListAsync();
+                filter = Builders<ChatMessage>.Filter.And(filter,Builders<ChatMessage>.Filter.Gt(m => m.SentAt, after.Value));
+
+            //var test = new AggregateBucketAutoResult<>
+            return await _collection.Find(filter).SortBy(m => m.SentAt).Limit(limit).ToListAsync();
         }
-        public async Task<List<ChatMessage>> GetDirectMessagesAsync(
-            string userId, string contactId, DateTime? after = null, int limit = 50)
+        public async Task<List<ChatMessage>> GetDirectMessagesAsync(string userId, string contactId, DateTime? after = null, int limit = 50)
         {
-            // Both directions: A→B and B→A
-            var directionFilter = Builders<ChatMessage>.Filter.Or(
-                Builders<ChatMessage>.Filter.And(
+            var directionFilter = Builders<ChatMessage>.Filter.Or(Builders<ChatMessage>.Filter.And(
                     Builders<ChatMessage>.Filter.Eq(m => m.SenderId, userId),
                     Builders<ChatMessage>.Filter.Eq(m => m.RecipientId, contactId)
                 ),
-                Builders<ChatMessage>.Filter.And(
-                    Builders<ChatMessage>.Filter.Eq(m => m.SenderId, contactId),
+                Builders<ChatMessage>.Filter.And(Builders<ChatMessage>.Filter.Eq(m => m.SenderId, contactId),
                     Builders<ChatMessage>.Filter.Eq(m => m.RecipientId, userId)
                 )
             );
@@ -62,11 +55,7 @@ namespace SignalRTest.Repository
                     Builders<ChatMessage>.Filter.Gt(m => m.SentAt, after.Value)
                 );
             }
-            return await _collection
-                .Find(filter)
-                .SortBy(m => m.SentAt)
-                .Limit(limit)
-                .ToListAsync();
+            return await _collection.Find(filter).SortBy(m => m.SentAt).Limit(limit).ToListAsync();
         }
     }
 }

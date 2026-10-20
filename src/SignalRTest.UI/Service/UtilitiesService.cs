@@ -82,5 +82,18 @@ namespace SignalRTest.UI.Service
             var url = $"/GetGroups?username={Uri.EscapeDataString(username)}";
             return await _apiCallService.APICall(new ApiRequest(HttpMethod.Get, url, null));
         }
+
+        public async Task<ApiResponse> UpdateGroup(string groupId, string requestedBy,string? newName, List<string> membersToAdd)
+        {
+            var body = new
+            {
+                GroupId = groupId,
+                RequestedBy = requestedBy,
+                NewName = newName,
+                MembersToAdd = membersToAdd
+            };
+            return await _apiCallService.APICall(
+                new ApiRequest(HttpMethod.Put, "/UpdateGroup", body));
+        }
     }
 }

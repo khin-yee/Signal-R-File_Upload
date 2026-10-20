@@ -9,10 +9,12 @@ namespace SIgnalRTest.Domain.Response
 {
     public class Auth0UserResponse
     {
+        [JsonProperty("user_name")]
+        public string User { get; set; }
+
         [JsonProperty("user_id")]
         public string UserId { get; set; } = "";
-        [JsonProperty("username")]
-        public string? Username { get; set; }
+
         [JsonProperty("email")]
         public string Email { get; set; } = "";
         [JsonProperty("name")]

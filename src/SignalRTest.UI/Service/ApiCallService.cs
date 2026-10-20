@@ -70,7 +70,7 @@ public class ApiCallService:IApiCallService
         else
         {
             baseUrl = apiRequest.url;
-        }
+        }      
         var httpRequestMsg = new HttpRequestMessage(apiRequest.method, baseUrl)
         {
             Content = (isFormContent) ?

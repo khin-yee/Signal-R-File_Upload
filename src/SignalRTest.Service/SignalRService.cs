@@ -50,7 +50,6 @@ public class SignalRService:ISignalRService
             SentAt        = DateTime.UtcNow,
             SentAtDisplay = DateTime.Now.ToShortTimeString()
         });
-
         if (sendMode == "Direct" && !string.IsNullOrEmpty(recipientUserId))
         {
             await _signalR.SendToUser(recipientUserId, "ReceiveMessage", message, userid);
@@ -62,7 +61,6 @@ public class SignalRService:ISignalRService
             await _signalR.SendSignalR("123", "ReceiveMessage", message, userid);
         }
     }
-
     private async Task<string> GetManagementApiToken()
     {
         var domain = _configuration["Auth0:Domain"];
@@ -148,5 +146,39 @@ public class SignalRService:ISignalRService
         return await _groupRepository.GetByMemberAsync(username);
     }
 
+    public async Task<ChatGroup?>UpdateGroup(string groupId,string requestedBy,string? newName,List<string> membersToAdd)
+    {
+        var group = await _groupRepository.GetByIdAsync(groupId);
+        if (group ==null) return null;
+        if (!group.CreatedBy.Equals(requestedBy, StringComparison.OrdinalIgnoreCase)) return null;
+        if (!string.IsNullOrWhiteSpace(newName)&& !newName.Equals(group.GroupName, StringComparison.OrdinalIgnoreCase))
+        {
+            await _groupRepository.UpdateNameAsync(groupId, newName);
+        }
+        if (membersToAdd.Any())
+        {
+            group = await _groupRepository.AddMembersAsync(groupId, membersToAdd)??group;
+        }
+        var updated = await _groupRepository.GetByIdAsync(groupId)??group;
+        await _signalR.NotifyGroupUpdated(groupId, updated.GroupName, updated.Members, membersToAdd);
+
+        return updated;
+    }
+    /*public async Task<ChatGroup?> UpdateGroup(
+    // Rename if new name provided and differen
+
+    // Add new members if any
+    if (membersToAdd.Any())
+        group = await _groupRepository.AddMembersAsync(groupId, membersToAdd) ?? group;
+
+    // Fetch final state from DB
+    var updated = await _groupRepository.GetByIdAsync(groupId) ?? group;
+
+    // Notify online members via SignalR
+    await _signalR.NotifyGroupUpdated(
+        groupId, updated.GroupName, updated.Members, membersToAdd);
+
+    return updated;
+}*/
 }
 

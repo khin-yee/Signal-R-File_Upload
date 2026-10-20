@@ -15,7 +15,6 @@ namespace SignalRTest.UI.Service
             _hubConnection = new HubConnectionBuilder()
            .WithUrl(navigation.ToAbsoluteUri($"{_configuration!["ApiURl:baseurl"]}/signalR")).Build();
         }
-
         public async Task StartAsync()
         {
             if (_hubConnection == null)
@@ -78,10 +77,15 @@ namespace SignalRTest.UI.Service
         }
 
         // ✅ Listen for new group creation notification
-        public void ListenGroupCreated(
-            Func<string, string, string, List<string>, Task> handler)
+        public void ListenGroupCreated(Func<string, string, string, List<string>, Task> handler)
         {
             _hubConnection.On<string, string, string, List<string>>("GroupCreated", handler);
         }
+
+        public void ListenGroupUpdated(Func<string, string, List<string>, Task> handler)
+        {
+            _hubConnection.On<string, string, List<string>>("GroupUpdated", handler);
+        }
+
     }
 }

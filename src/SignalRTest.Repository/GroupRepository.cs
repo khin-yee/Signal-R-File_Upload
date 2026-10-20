@@ -25,7 +25,7 @@ namespace SignalRTest.Repository
             await _collection.InsertOneAsync(group);
             return group;  
         }
-
+       
         public async Task<ChatGroup?> GetByIdAsync(string groupId)
         {
             return await _collection.Find(g => g.Id == groupId).FirstOrDefaultAsync();
@@ -36,6 +36,17 @@ namespace SignalRTest.Repository
             return await _collection.Find(g => g.Members.Contains(username))
            .SortByDescending(g => g.CreatedAt)
            .ToListAsync();
+        }
+        public async Task UpdateNameAsync(string groupId,string newName)
+        {
+            await _collection.UpdateOneAsync(g => g.Id == groupId,Builders<ChatGroup>.Update.Set(g=>g.GroupName,newName));
+        }
+
+        public async Task<ChatGroup?> AddMembersAsync(string groupId,List<string> newMembers)
+        {
+            var update = Builders<ChatGroup>.Update.AddToSetEach(g => g.Members, newMembers);
+            await _collection.UpdateOneAsync(g => g.Id ==groupId, update);
+            return await GetByIdAsync(groupId);
         }
     }
 }

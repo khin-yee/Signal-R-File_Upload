@@ -21,5 +21,6 @@ namespace SIgnalRTest.Domain.Models
         public DateTime? LastSeen { get; set; } = null;
         public string? CustomGroupId { get; set; } = null;
         public List<string> Members { get; set; } = new();
+        public string? CreatedBy { get; set; } = null;
     }
 }
