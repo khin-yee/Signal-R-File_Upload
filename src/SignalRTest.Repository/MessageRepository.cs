@@ -55,7 +55,8 @@ namespace SignalRTest.Repository
                     Builders<ChatMessage>.Filter.Gt(m => m.SentAt, after.Value)
                 );
             }
-            return await _collection.Find(filter).SortBy(m => m.SentAt).Limit(limit).ToListAsync();
+           
+                return await _collection.Find(filter).SortBy(m => m.SentAt).Limit(limit).ToListAsync();
         }
     }
 }

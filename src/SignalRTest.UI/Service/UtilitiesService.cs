@@ -12,6 +12,7 @@ namespace SignalRTest.UI.Service
         {
             _apiCallService = apiCallService;
         }
+ 
         public async Task<ApiResponse> CallApi(string message,string username)
         {
             var MessageRequest = new MessageRequest
@@ -46,9 +47,8 @@ namespace SignalRTest.UI.Service
             var apiRequest = new ApiRequest(HttpMethod.Get, url, null);
             return await _apiCallService.APICall(apiRequest);
         }
-
         public async Task<ApiResponse> ValidateUser(string usernameOrEmail)
-        {
+        {          
             var url = $"/ValidateUser?usernameOrEmail={Uri.EscapeDataString(usernameOrEmail)}";
             var apiRequest = new ApiRequest(HttpMethod.Get, url, null);
             return await _apiCallService.APICall(apiRequest);

@@ -12,5 +12,6 @@ namespace SIgnalRTest.Domain.Response
         public string ErrorMessage { get; set; }
         public string? Detail { get; set; }
 
+        public string? usedmesssge { get; set; } 
     }
 }

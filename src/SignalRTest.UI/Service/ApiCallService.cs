@@ -76,7 +76,6 @@ public class ApiCallService:IApiCallService
             Content = (isFormContent) ?
            (apiRequest.requestBody as MultipartFormDataContent) : new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(apiRequest.requestBody), Encoding.UTF8, MediaTypeNames.Application.Json)
         };
-
         httpRequestMsg.Headers.UserAgent.ParseAdd("HttpRequestsSample");
         httpRequestMsg.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(isFormContent ? "*/*" : "application/json"));
         return httpRequestMsg;

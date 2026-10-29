@@ -12,6 +12,7 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
     {
         return Task.FromResult(new AuthenticationState(_user));
     }
+    
 
     public void MarkUserAsAuthenticated(string userName, IEnumerable<Claim> claims)
     {
@@ -19,7 +20,6 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
         _user = new ClaimsPrincipal(identity);
         NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
     }
-
     public void MarkUserAsLoggedOut()
     {
         _user = new ClaimsPrincipal(new ClaimsIdentity());

@@ -74,7 +74,6 @@ public class SignalRController : ControllerBase
         {
             afterDate = parsed;
         }
-
         var messages = await _service.GetMessages(
             currentUserId, sendMode, contactId, groupId, afterDate);
 
@@ -115,7 +114,6 @@ public class SignalRController : ControllerBase
             return StatusCode(403, new ApiResponse { ErrorCode = "03", ErrorMessage = "only group admin can update" });
         return Ok(result);
     }
-
 
 }
 

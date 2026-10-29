@@ -22,8 +22,8 @@ namespace SIgnalRTest.Domain.Response
         // Not from Auth0 — set by our server based on SignalR registry
         public bool IsOnline { get; set; } = false;
         // Helper — returns Username if set, otherwise the part before @ in Email
-        public string DisplayName => !string.IsNullOrEmpty(Username)
-            ? Username
+        public string DisplayName => !string.IsNullOrEmpty(Name)
+            ? Name
             : Email.Split('@')[0];
     }
 }
