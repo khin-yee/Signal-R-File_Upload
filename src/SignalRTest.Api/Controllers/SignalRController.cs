@@ -1,4 +1,4 @@
-﻿using Hangfire;
+using Hangfire;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SignalRTest.Service.SignalRClient;
@@ -115,5 +115,35 @@ public class SignalRController : ControllerBase
         return Ok(result);
     }
 
+    // ✅ NEW — admin removes a member
+    [HttpPost("/RemoveGroupMember")]
+    public async Task<IActionResult> RemoveGroupMember([FromBody] RemoveMemberRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.GroupId) ||
+            string.IsNullOrWhiteSpace(request.MemberToRemove))
+            return BadRequest(new ApiResponse
+                { ErrorCode = "02", ErrorMessage = "GroupId and MemberToRemove are required" });
+
+        var result = await _service.RemoveMember(
+            request.GroupId, request.RequestedBy, request.MemberToRemove);
+
+        if (result == null)
+            return StatusCode(403, new ApiResponse
+                { ErrorCode = "03", ErrorMessage = "Only the group admin can remove members" });
+
+        return Ok(result);
+    }
+
+    [HttpPost("/LeaveGroup")]
+    public async Task<IActionResult> LeaveGroup([FromBody] LeaveGroupRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.GroupId) ||
+            string.IsNullOrWhiteSpace(request.MemberName))
+            return BadRequest(new ApiResponse
+            { ErrorCode = "02", ErrorMessage = "GroupId and MemberName are required" });
+
+        await _service.LeaveGroup(request.GroupId, request.MemberName);
+        return Ok();
+    }
 }
 

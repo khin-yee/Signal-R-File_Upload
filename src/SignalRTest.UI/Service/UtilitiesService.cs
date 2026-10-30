@@ -1,4 +1,4 @@
-﻿using SIgnalRTest.Domain.Request;
+using SIgnalRTest.Domain.Request;
 using SIgnalRTest.Domain.Response;
 
 namespace SignalRTest.UI.Service
@@ -92,8 +92,29 @@ namespace SignalRTest.UI.Service
                 NewName = newName,
                 MembersToAdd = membersToAdd
             };
+            return await _apiCallService.APICall(new ApiRequest(HttpMethod.Put, "/UpdateGroup", body));
+        }
+
+        // ✅ NEW
+        public async Task<ApiResponse> RemoveGroupMember(
+            string groupId, string requestedBy, string memberToRemove)
+        {
+            var body = new
+            {
+                GroupId        = groupId,
+                RequestedBy    = requestedBy,
+                MemberToRemove = memberToRemove
+            };
             return await _apiCallService.APICall(
-                new ApiRequest(HttpMethod.Put, "/UpdateGroup", body));
+                new ApiRequest(HttpMethod.Post, "/RemoveGroupMember", body));
+        }
+
+        // ✅ NEW
+        public async Task<ApiResponse> LeaveGroup(string groupId, string memberName)
+        {
+            var body = new { GroupId = groupId, MemberName = memberName };
+            return await _apiCallService.APICall(
+                new ApiRequest(HttpMethod.Post, "/LeaveGroup", body));
         }
     }
 }

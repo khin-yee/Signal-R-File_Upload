@@ -424,17 +424,28 @@
                         <div class="cr-member-list">
                             @foreach (var member in ActiveConversation.Members)
                             {
+                                var m = member; @* capture for lambda *@
                                 <div class="cr-member-row">
                                     <div class="cr-member-avatar"
-                                         style="background:@GetAvatarColor(member);
-                                            color:@GetAvatarTextColor(member);">
-                                        @member.Substring(0, 1).ToUpper()
+                                         style="background:@GetAvatarColor(m);
+                                            color:@GetAvatarTextColor(m);">
+                                        @m.Substring(0, 1).ToUpper()
                                     </div>
-                                    <span class="cr-member-name">@member</span>
-                                    @if (member.Equals(ActiveConversation.CreatedBy,
-                                   StringComparison.OrdinalIgnoreCase))
+                                    <span class="cr-member-name">@m</span>
+                                    @if (m.Equals(ActiveConversation.CreatedBy,
+                                        StringComparison.OrdinalIgnoreCase))
                                     {
                                         <span class="cr-admin-badge">Admin</span>
+                                    }
+                                    @* ✅ Remove button — admin only, not for self *@
+                                    @if (IsGroupAdmin &&
+                                         !m.Equals(Name, StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <button class="cr-remove-member-btn"
+                                                @onclick="async () => await RemoveMemberAsync(m)"
+                                                title="Remove @m">
+                                            ✕
+                                        </button>
                                     }
                                 </div>
                             }
@@ -491,6 +502,11 @@
                 </div>
 
                 <div class="cr-dialog-actions">
+                    @* ✅ NEW — visible to all members *@
+                    <button class="cr-leave-group-btn" @onclick="LeaveGroupAsync"
+                            disabled="@IsLeavingGroup">
+                        @(IsLeavingGroup ? "Leaving..." : "Leave Group")
+                    </button>
                     <button class="cr-dialog-cancel"
                             @onclick="() => { ShowGroupSettings = false; StateHasChanged(); }">
                         Close
@@ -516,6 +532,29 @@
         height: 100%;
         overflow: hidden;
     }
+
+    /* ✅ NEW — leave group button */
+    .cr-leave-group-btn {
+        padding: 9px 14px;
+        border: 1.5px solid #fca5a5;
+        border-radius: 8px;
+        background: #fff;
+        color: #dc2626;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.15s;
+        flex-shrink: 0;
+    }
+
+        .cr-leave-group-btn:hover {
+            background: #fee2e2;
+        }
+
+        .cr-leave-group-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
 
     /* Settings button in chat header */
     .cr-group-settings-btn {
@@ -714,6 +753,30 @@
     .cr-member-name {
         font-size: 0.88rem;
         color: #374151;
+        flex: 1;  /* take remaining space so remove btn stays on right */
+    }
+
+    /* ✅ NEW — red remove button on member rows (admin only) */
+    .cr-remove-member-btn {
+        margin-left: auto;
+        width: 24px;
+        height: 24px;
+        border: none;
+        border-radius: 50%;
+        background: transparent;
+        color: #d1d5db;
+        font-size: 0.75rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s, color 0.15s;
+        flex-shrink: 0;
+    }
+
+    .cr-remove-member-btn:hover {
+        background: #fee2e2;
+        color: #dc2626;
     }
 
     /* Dialog actions */

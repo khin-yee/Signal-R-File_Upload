@@ -65,6 +65,7 @@ public partial class SignalR : ComponentBase, IDisposable
     public bool IsGroupAdmin =>
         ActiveConversation?.CustomGroupId != null &&
         Name.Equals(ActiveConversation.CreatedBy, StringComparison.OrdinalIgnoreCase);
+    public bool IsLeavingGroup { get; set; } = false;
 
     [Inject]
     public UtilitiesService? _service { get; set; }
@@ -87,11 +88,16 @@ public partial class SignalR : ComponentBase, IDisposable
         await signalRService.JoinGroupAsync("123");
         ListenSignalREvent();
         ListenUserListEvent();
-        ListenGroupMessageEvent();   // ✅ NEW
-        ListenGroupCreatedEvent();   // ✅ NEW
+        ListenGroupMessageEvent();   // ✅ 
+        ListenGroupCreatedEvent();   // ✅ 
         ListenLastSeenEvent();
-        ListenGroupUpdatedEvent();   // ✅ NEW
-
+        ListenGroupUpdatedEvent();
+        ListenMemberRemovedEvent();  // ✅ NEW
+        ListenRemovedFromGroupEvent(); // ✅ NEW
+        ListenMemberLeftEvent();
+        ListenLeftGroupEvent();
+        ListenGroupDeletedEvent();
+        ListenAdminTransferredEvent();
         await signalRService.RegisterUserAsync(Name);
 
         var groupConv = new ConversationItem
@@ -646,7 +652,105 @@ public partial class SignalR : ComponentBase, IDisposable
             await InvokeAsync(StateHasChanged); // ✅ properly awaited
         });
     }
+    public async Task LeaveGroupAsync()
+    {
+        if (ActiveConversation?.CustomGroupId == null) return;
 
+        var groupName = ActiveConversation.ContactName;
+        var confirm = await DialogService.ShowMessageBox(
+            "Leave Group",
+            $"Are you sure you want to leave \"{groupName}\"?",
+            yesText: "Leave", cancelText: "Cancel");
+
+        if (confirm != true) return;
+
+        IsLeavingGroup = true;
+        await InvokeAsync(StateHasChanged);
+
+        await _service!.LeaveGroup(ActiveConversation.CustomGroupId, Name);
+
+        // Cleanup is handled by ListenLeftGroupEvent / ListenGroupDeletedEvent
+        ShowGroupSettings = false;
+        IsLeavingGroup    = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task DropGroupFromSidebar(string groupId, string snackbarMessage)
+    {
+        var conv = Conversations.FirstOrDefault(c => c.CustomGroupId == groupId);
+        if (conv == null) return;
+
+        if (ActiveConversation?.CustomGroupId == groupId)
+        {
+            var fallback = Conversations.FirstOrDefault(c =>
+                c.IsGroup && c.CustomGroupId == null);
+            ActiveConversation  = fallback;
+            SendMode            = "All";
+            ActiveCustomGroupId = null;
+        }
+
+        Conversations.Remove(conv);
+        ConversationMessages.Remove(conv.ContactName);
+        Snackbar.Add(snackbarMessage, Severity.Warning);
+
+        await InvokeAsync(StateHasChanged);
+    }
+    private void ListenMemberLeftEvent()
+    {
+        signalRService.ListenMemberLeft(async (groupId, memberName, remainingMembers) =>
+        {
+            var conv = Conversations.FirstOrDefault(c => c.CustomGroupId == groupId);
+            if (conv == null) return;
+
+            conv.Members = remainingMembers;
+
+            // System message in chat
+            if (!ConversationMessages.ContainsKey(conv.ContactName))
+                ConversationMessages[conv.ContactName] = new();
+            ConversationMessages[conv.ContactName].Add(new MessageRequest
+            {
+                message  = $"👋 {memberName} left the group.",
+                userid   = "System",
+                sendtime = DateTime.Now.ToShortTimeString(),
+                sendmode = "Group"
+            });
+
+            await InvokeAsync(StateHasChanged);
+        });
+    }
+
+    private void ListenLeftGroupEvent()
+    {
+        signalRService.ListenLeftGroup(async (groupId) =>
+        {
+            var conv = Conversations.FirstOrDefault(c => c.CustomGroupId == groupId);
+            var groupName = conv?.ContactName ?? "group";
+            await DropGroupFromSidebar(groupId, $"You left \"{groupName}\"");
+        });
+    }
+    private void ListenGroupDeletedEvent()
+    {
+        signalRService.ListenGroupDeleted(async (groupId) =>
+        {
+            var conv = Conversations.FirstOrDefault(c => c.CustomGroupId == groupId);
+            var groupName = conv?.ContactName ?? "group";
+            await DropGroupFromSidebar(groupId, $"The group \"{groupName}\" was deleted");
+        });
+    }
+
+    private void ListenAdminTransferredEvent()
+    {
+        signalRService.ListenAdminTransferred(async (groupId, newAdminName) =>
+        {
+            var conv = Conversations.FirstOrDefault(c => c.CustomGroupId == groupId);
+            if (conv == null) return;
+
+            conv.CreatedBy = newAdminName;
+
+            // If it's the current user who became admin, refresh IsGroupAdmin
+            await InvokeAsync(StateHasChanged);
+        });
+    }
     public async Task ConfirmLogout()
     {
         var confirmed = await DialogService.ShowMessageBox(
@@ -854,6 +958,84 @@ public partial class SignalR : ComponentBase, IDisposable
         if (!MembersToAdd.Remove(username))
             MembersToAdd.Add(username);
         StateHasChanged();
+    }
+
+    // ✅ NEW — admin removes a member from the group
+    public async Task RemoveMemberAsync(string memberToRemove)
+    {
+        if (ActiveConversation?.CustomGroupId == null) return;
+
+        var response = await _service!.RemoveGroupMember(
+            ActiveConversation.CustomGroupId, Name, memberToRemove);
+
+        if (response.ErrorCode == "00" && !string.IsNullOrEmpty(response.Detail))
+        {
+            var updated = JsonConvert.DeserializeObject<ChatGroup>(response.Detail);
+            if (updated != null)
+            {
+                ActiveConversation.Members = updated.Members;
+                UpdateGroupSuccess = $"{memberToRemove} was removed from the group.";
+                UpdateGroupError   = null;
+            }
+        }
+        else
+        {
+            UpdateGroupError = "Failed to remove member.";
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    // ✅ NEW — remaining members receive updated list after someone is removed
+    private void ListenMemberRemovedEvent()
+    {
+        signalRService.ListenMemberRemoved(async (groupId, removedMember, remainingMembers) =>
+        {
+            var conv = Conversations.FirstOrDefault(c => c.CustomGroupId == groupId);
+            if (conv == null) return;
+
+            conv.Members = remainingMembers;
+
+            // Add a system message in the chat
+            if (!ConversationMessages.ContainsKey(conv.ContactName))
+                ConversationMessages[conv.ContactName] = new();
+            ConversationMessages[conv.ContactName].Add(new MessageRequest
+            {
+                message  = $"🚫 {removedMember} was removed from the group.",
+                userid   = "System",
+                sendtime = DateTime.Now.ToShortTimeString(),
+                sendmode = "Group"
+            });
+
+            await InvokeAsync(StateHasChanged);
+        });
+    }
+
+    // ✅ NEW — this user was kicked → drop the group from their sidebar
+    private void ListenRemovedFromGroupEvent()
+    {
+        signalRService.ListenRemovedFromGroup(async (groupId) =>
+        {
+            var conv = Conversations.FirstOrDefault(c => c.CustomGroupId == groupId);
+            if (conv == null) return;
+
+            // Fall back to global Group Chat if this was the active conversation
+            if (ActiveConversation?.CustomGroupId == groupId)
+            {
+                var fallback = Conversations.FirstOrDefault(c =>
+                    c.IsGroup && c.CustomGroupId == null);
+                ActiveConversation  = fallback;
+                SendMode            = "All";
+                ActiveCustomGroupId = null;
+            }
+
+            Conversations.Remove(conv);
+            ConversationMessages.Remove(conv.ContactName);
+
+            Snackbar.Add($"You were removed from \"{conv.ContactName}\"", Severity.Warning);
+
+            await InvokeAsync(StateHasChanged);
+        });
     }
 }
 

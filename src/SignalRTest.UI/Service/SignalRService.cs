@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.SignalR.Client;
 using SIgnalRTest.Domain.IServices;
 
@@ -87,5 +87,40 @@ namespace SignalRTest.UI.Service
             _hubConnection.On<string, string, List<string>>("GroupUpdated", handler);
         }
 
+        // ✅ NEW — remaining members receive updated member list after a removal
+        public void ListenMemberRemoved(Func<string, string, List<string>, Task> handler)
+        {
+            _hubConnection.On<string, string, List<string>>("MemberRemoved", handler);
+        }
+
+        // ✅ NEW — the kicked user is told they were removed
+        public void ListenRemovedFromGroup(Func<string, Task> handler)
+        {
+            _hubConnection.On<string>("RemovedFromGroup", handler);
+        }
+
+        // ✅ NEW — remaining members: someone left voluntarily
+        public void ListenMemberLeft(Func<string, string, List<string>, Task> handler)
+        {
+            _hubConnection.On<string, string, List<string>>("MemberLeft", handler);
+        }
+
+        // ✅ NEW — the member who left receives this
+        public void ListenLeftGroup(Func<string, Task> handler)
+        {
+            _hubConnection.On<string>("LeftGroup", handler);
+        }
+
+        // ✅ NEW — entire group deleted (last member left)
+        public void ListenGroupDeleted(Func<string, Task> handler)
+        {
+            _hubConnection.On<string>("GroupDeleted", handler);
+        }
+
+        // ✅ NEW — admin role changed
+        public void ListenAdminTransferred(Func<string, string, Task> handler)
+        {
+            _hubConnection.On<string, string>("AdminTransferred", handler);
+        }
     }
 }

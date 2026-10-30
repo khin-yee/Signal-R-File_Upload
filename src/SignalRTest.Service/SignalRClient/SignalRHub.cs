@@ -131,4 +131,68 @@ public class SignalRHub : Hub
             }
         }
     }
+
+    // ✅ NEW — notify everyone when a member is removed
+    public async Task NotifyMemberRemoved(
+        string groupId, string removedMember, List<string> remainingMembers)
+    {
+        // Tell all remaining members the updated member list
+        await _singnalRhub.Clients.Group(groupId)
+            .SendAsync("MemberRemoved", groupId, removedMember, remainingMembers);
+
+        // Tell the removed user personally so their sidebar drops the group
+        if (_userConnections.TryGetValue(removedMember, out var removedConnId))
+        {
+            // Remove from SignalR group room first
+            await _singnalRhub.Groups.RemoveFromGroupAsync(removedConnId, groupId);
+            // Then notify them
+            await _singnalRhub.Clients.Client(removedConnId)
+                .SendAsync("RemovedFromGroup", groupId);
+        }
+    }
+
+    // ✅ NEW — notify everyone when a member voluntarily leaves
+    public async Task NotifyMemberLeft(
+        string groupId,
+        string memberName,
+        List<string> remainingMembers,
+        string? newAdminName,
+        bool groupDeleted,
+        List<string> allMemberConnections)   // pass original member list connection IDs
+    {
+        if (groupDeleted)
+        {
+            // Notify ALL former members (before removal) that group is gone
+            foreach (var connId in allMemberConnections)
+            {
+                await _singnalRhub.Clients.Client(connId)
+                    .SendAsync("GroupDeleted", groupId);
+                await _singnalRhub.Groups.RemoveFromGroupAsync(connId, groupId);
+            }
+        }
+        else
+        {
+            // Tell remaining members someone left
+            await _singnalRhub.Clients.Group(groupId)
+                .SendAsync("MemberLeft", groupId, memberName, remainingMembers);
+
+            // If admin changed, tell everyone the new admin
+            if (newAdminName != null)
+            {
+                await _singnalRhub.Clients.Group(groupId)
+                    .SendAsync("AdminTransferred", groupId, newAdminName);
+            }
+
+            // Tell the leaver personally so their sidebar removes the group
+            if (_userConnections.TryGetValue(memberName, out var leaverConnId))
+            {
+                await _singnalRhub.Groups.RemoveFromGroupAsync(leaverConnId, groupId);
+                await _singnalRhub.Clients.Client(leaverConnId)
+                    .SendAsync("LeftGroup", groupId);
+            }
+        }
+    }
+
+    public static bool TryGetConnection(string username, out string? connId)
+        => _userConnections.TryGetValue(username, out connId);
 }

@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using MongoDB.Driver;
 using SIgnalRTest.Domain.IServices;
 using SIgnalRTest.Domain.Models;
@@ -47,6 +47,31 @@ namespace SignalRTest.Repository
             var update = Builders<ChatGroup>.Update.AddToSetEach(g => g.Members, newMembers);
             await _collection.UpdateOneAsync(g => g.Id ==groupId, update);
             return await GetByIdAsync(groupId);
+        }
+
+        public async Task<ChatGroup?> RemoveMemberAsync(string groupId, string memberToRemove)
+        {
+            var update = Builders<ChatGroup>.Update.Pull(g => g.Members, memberToRemove);
+            await _collection.UpdateOneAsync(g => g.Id == groupId, update);
+            return await GetByIdAsync(groupId);
+        }
+
+        public async Task<ChatGroup?> LeaveGroupAsync(string groupId, string memberName)
+        {
+            var update = Builders<ChatGroup>.Update.Pull(g => g.Members, memberName);
+            await _collection.UpdateOneAsync(g => g.Id == groupId, update);
+            return await GetByIdAsync(groupId);
+        }
+
+        public async Task TransferAdminAsync(string groupId, string newAdminName)
+        {
+            var update = Builders<ChatGroup>.Update.Set(g => g.CreatedBy, newAdminName);
+            await _collection.UpdateOneAsync(g => g.Id == groupId, update);
+        }
+
+        public async Task DeleteAsync(string groupId)
+        {
+            await _collection.DeleteOneAsync(g => g.Id == groupId);
         }
     }
 }

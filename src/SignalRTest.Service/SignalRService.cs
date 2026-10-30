@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -146,7 +146,7 @@ public class SignalRService:ISignalRService
         return await _groupRepository.GetByMemberAsync(username);
     }
 
-    public async Task<ChatGroup?>UpdateGroup(string groupId,string requestedBy,string? newName,List<string> membersToAdd)
+    public async Task<ChatGroup?> UpdateGroup(string groupId,string requestedBy,string? newName,List<string> membersToAdd)
     {
         var group = await _groupRepository.GetByIdAsync(groupId);
         if (group ==null) return null;
@@ -164,21 +164,76 @@ public class SignalRService:ISignalRService
 
         return updated;
     }
-    /*public async Task<ChatGroup?> UpdateGroup(
-    // Rename if new name provided and differen
 
-    // Add new members if any
-    if (membersToAdd.Any())
-        group = await _groupRepository.AddMembersAsync(groupId, membersToAdd) ?? group;
+    // ✅ NEW — admin removes one member from the group
+    public async Task<ChatGroup?> RemoveMember(string groupId, string requestedBy, string memberToRemove)
+    {
+        var group = await _groupRepository.GetByIdAsync(groupId);
+        if (group == null) return null;
 
-    // Fetch final state from DB
-    var updated = await _groupRepository.GetByIdAsync(groupId) ?? group;
+        // Only admin can remove members
+        if (!group.CreatedBy.Equals(requestedBy, StringComparison.OrdinalIgnoreCase))
+            return null;
 
-    // Notify online members via SignalR
-    await _signalR.NotifyGroupUpdated(
-        groupId, updated.GroupName, updated.Members, membersToAdd);
+        // Admin cannot remove themselves
+        if (memberToRemove.Equals(requestedBy, StringComparison.OrdinalIgnoreCase))
+            return null;
 
-    return updated;
-}*/
+        var updated = await _groupRepository.RemoveMemberAsync(groupId, memberToRemove);
+        if (updated == null) return null;
+
+        // Notify all remaining members + the removed user via SignalR
+        await _signalR.NotifyMemberRemoved(groupId, memberToRemove, updated.Members);
+
+        return updated;
+    }
+    // ✅ NEW
+    public async Task LeaveGroup(string groupId, string memberName)
+    {
+        var group = await _groupRepository.GetByIdAsync(groupId);
+        if (group == null) return;
+
+        // Validate the member is actually in this group
+        if (!group.Members.Contains(memberName, StringComparer.OrdinalIgnoreCase))
+            return;
+
+        // Capture original member connection IDs BEFORE removal (needed for GroupDeleted path)
+        var originalMemberConnIds = group.Members
+            .Select(m => { SignalRHub.TryGetConnection(m, out var c); return c; })
+            .Where(c => c != null)
+            .ToList()!;
+
+        // Remove member from MongoDB
+        var updated = await _groupRepository.LeaveGroupAsync(groupId, memberName);
+
+        // Case 1: No members left → delete the group
+        if (updated == null || !updated.Members.Any())
+        {
+            await _groupRepository.DeleteAsync(groupId);
+            await _signalR.NotifyMemberLeft(
+                groupId, memberName,
+                remainingMembers: new List<string>(),
+                newAdminName: null,
+                groupDeleted: true,
+                allMemberConnections: originalMemberConnIds!);
+            return;
+        }
+
+        // Case 2: Admin left but members remain → transfer admin
+        string? newAdmin = null;
+        if (group.CreatedBy.Equals(memberName, StringComparison.OrdinalIgnoreCase))
+        {
+            newAdmin = updated.Members.First();
+            await _groupRepository.TransferAdminAsync(groupId, newAdmin);
+        }
+
+        // Case 3 (and Case 2 continued): Notify everyone
+        await _signalR.NotifyMemberLeft(
+            groupId, memberName,
+            remainingMembers: updated.Members,
+            newAdminName: newAdmin,
+            groupDeleted: false,
+            allMemberConnections: originalMemberConnIds!);
+    }
 }
 
